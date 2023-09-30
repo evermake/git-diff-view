@@ -83,12 +83,12 @@ paths:
                   items:
                     type: object
                     properties:
-                      old_file_line:
+                      t:
                         type: string
-                      new_file_line:
+                        description: "Type of the diff line \"a\" — added, \"d\" — deleted, \"c\" — common"
+                      l:
                         type: string
-                      content:
-                        type: integer
+                        description: "Content of the file"
           '400':
             description: Bad Request
             content:
