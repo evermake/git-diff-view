@@ -112,6 +112,23 @@ components:
         - lines
       properties:
         status:
+          $ref: '#/components/schemas/Status'
+        src:
+          $ref: '#/components/schemas/State'
+        dst:
+          $ref: '#/components/schemas/State'
+        lines:
+          $ref: '#/components/schemas/Range'
+    Status:
+      type: object
+      required:
+        - type
+      properties:
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        type:
           type: string
           enum:
             - A
@@ -122,12 +139,6 @@ components:
             - T
             - U
             - X
-        src:
-          $ref: '#/components/schemas/State'
-        dst:
-          $ref: '#/components/schemas/State'
-        lines:
-          $ref: '#/components/schemas/Range'
     State:
       type: object
       required:
