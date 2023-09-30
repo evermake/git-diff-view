@@ -1,0 +1,25 @@
+0000000000000000000000000000000000000000 8cf752ab2bd04202119ae36407ef0c2ccf5b08aa majorro <andrabaratrum007@gmail.com> 1696059343 +0300	commit (initial): initial commit
+8cf752ab2bd04202119ae36407ef0c2ccf5b08aa 9f56cf11834b4647ce3aaae66901365fc895c985 majorro <andrabaratrum007@gmail.com> 1696059603 +0300	commit: com1
+9f56cf11834b4647ce3aaae66901365fc895c985 53df96487eafc8c4880c6a404bec452e8df2b80f majorro <andrabaratrum007@gmail.com> 1696059949 +0300	commit: small text changes
+53df96487eafc8c4880c6a404bec452e8df2b80f 9f56cf11834b4647ce3aaae66901365fc895c985 majorro <andrabaratrum007@gmail.com> 1696060137 +0300	reset: moving to HEAD^
+9f56cf11834b4647ce3aaae66901365fc895c985 8cf752ab2bd04202119ae36407ef0c2ccf5b08aa majorro <andrabaratrum007@gmail.com> 1696060154 +0300	reset: moving to HEAD^
+8cf752ab2bd04202119ae36407ef0c2ccf5b08aa 741bd120a22cfdbcd81eb95340219aeaf87b7e02 majorro <andrabaratrum007@gmail.com> 1696060170 +0300	commit: 1 small file
+741bd120a22cfdbcd81eb95340219aeaf87b7e02 ced379cd5a66ba2f002296a765ce1494413db46a majorro <andrabaratrum007@gmail.com> 1696060216 +0300	commit: 1 small file edits
+ced379cd5a66ba2f002296a765ce1494413db46a a737ce9329dc34e36893adaabc60391e2d28be64 majorro <andrabaratrum007@gmail.com> 1696060246 +0300	commit: 1 small file deleted
+a737ce9329dc34e36893adaabc60391e2d28be64 b280d5c88e7a69b4bccf3f849c7c9de1b52402dc majorro <andrabaratrum007@gmail.com> 1696060723 +0300	commit: 100 small files added
+b280d5c88e7a69b4bccf3f849c7c9de1b52402dc cc3ec2f77fed041348713e5101dd75c0168e3f93 majorro <andrabaratrum007@gmail.com> 1696060790 +0300	commit: 100 small files edited
+cc3ec2f77fed041348713e5101dd75c0168e3f93 6702b98cdde629889d9af8a7f1505ab5c784b5cb majorro <andrabaratrum007@gmail.com> 1696060845 +0300	commit: 100 small files deleted
+6702b98cdde629889d9af8a7f1505ab5c784b5cb 7184a2be830f0d53ca9bc6cdf75081c9a8a6ab04 majorro <andrabaratrum007@gmail.com> 1696060978 +0300	commit: 1000 small files added
+7184a2be830f0d53ca9bc6cdf75081c9a8a6ab04 7b0d695be340e6b400fe3b08271dfd59497e8f7f majorro <andrabaratrum007@gmail.com> 1696061032 +0300	commit: 1000 files edited
+7b0d695be340e6b400fe3b08271dfd59497e8f7f 0738486df8a5ef16902c35986ca839bc5107e97d majorro <andrabaratrum007@gmail.com> 1696061147 +0300	commit: 1000 small files deleted
+0738486df8a5ef16902c35986ca839bc5107e97d 7eb8745dfb701c5e3173704ac9f232921234d668 majorro <andrabaratrum007@gmail.com> 1696061200 +0300	commit: 10000 small files added
+7eb8745dfb701c5e3173704ac9f232921234d668 6a98f7fa53d4a4abef3fb9b58f2f76da980e349a majorro <andrabaratrum007@gmail.com> 1696061372 +0300	commit: 10000 small files edited
+6a98f7fa53d4a4abef3fb9b58f2f76da980e349a bf3b8a431736235b91886b433c83b5b4752bc25f majorro <andrabaratrum007@gmail.com> 1696061776 +0300	commit: 10000 small files deleted
+bf3b8a431736235b91886b433c83b5b4752bc25f e3a14744171cf2ec982d3d9aa6dfc784c1cf09d0 majorro <andrabaratrum007@gmail.com> 1696062045 +0300	commit: 1 average file added
+e3a14744171cf2ec982d3d9aa6dfc784c1cf09d0 bf3b8a431736235b91886b433c83b5b4752bc25f majorro <andrabaratrum007@gmail.com> 1696062082 +0300	reset: moving to HEAD^
+bf3b8a431736235b91886b433c83b5b4752bc25f a8c589ee2a9a56cb28684d5b630ae1393c62608e majorro <andrabaratrum007@gmail.com> 1696062172 +0300	commit: 1 5mb file added
+a8c589ee2a9a56cb28684d5b630ae1393c62608e 467b7e5073de983c5aa9e4a641c69559c6f57f6e majorro <andrabaratrum007@gmail.com> 1696062226 +0300	commit: 1 5mb file edited
+467b7e5073de983c5aa9e4a641c69559c6f57f6e ae31ef2c96eb16fdf3c314e2da8ba49db446b73b majorro <andrabaratrum007@gmail.com> 1696062260 +0300	commit: 1 5mb file deleted
+ae31ef2c96eb16fdf3c314e2da8ba49db446b73b 49e47ceb7ed7a0f62224cc8d7a4b431dac5b3f0b majorro <andrabaratrum007@gmail.com> 1696062483 +0300	commit: 1 500mb (4e6 rows) file added
+49e47ceb7ed7a0f62224cc8d7a4b431dac5b3f0b a2fee514c86809b8bd73bcb1cac156af951b5b40 majorro <andrabaratrum007@gmail.com> 1696062529 +0300	commit: 1 500mb (4e6 rows) file edited
+a2fee514c86809b8bd73bcb1cac156af951b5b40 03653e8c1fb4f2a3e653d0a231bb8ef85ac14c30 majorro <andrabaratrum007@gmail.com> 1696062584 +0300	commit: 1 500mb (4e6 rows) file deleted
