@@ -20,45 +20,40 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// Defines values for FileDiffStatus.
+// Defines values for LineDiffOp.
 const (
-	FileDiffStatusA FileDiffStatus = "A"
-	FileDiffStatusC FileDiffStatus = "C"
-	FileDiffStatusD FileDiffStatus = "D"
-	FileDiffStatusM FileDiffStatus = "M"
-	FileDiffStatusR FileDiffStatus = "R"
-	FileDiffStatusT FileDiffStatus = "T"
-	FileDiffStatusU FileDiffStatus = "U"
-	FileDiffStatusX FileDiffStatus = "X"
+	LineDiffOpA LineDiffOp = "a"
+	LineDiffOpD LineDiffOp = "d"
 )
 
-// Defines values for LineDiffStatus.
+// Defines values for StatusType.
 const (
-	LineDiffStatusA LineDiffStatus = "a"
-	LineDiffStatusC LineDiffStatus = "c"
-	LineDiffStatusD LineDiffStatus = "d"
+	StatusTypeA StatusType = "A"
+	StatusTypeC StatusType = "C"
+	StatusTypeD StatusType = "D"
+	StatusTypeM StatusType = "M"
+	StatusTypeR StatusType = "R"
+	StatusTypeT StatusType = "T"
+	StatusTypeU StatusType = "U"
+	StatusTypeX StatusType = "X"
 )
 
 // FileDiff defines model for FileDiff.
 type FileDiff struct {
-	Dst      State          `json:"dst"`
-	IsBinary bool           `json:"isBinary"`
-	Lines    Range          `json:"lines"`
-	Src      State          `json:"src"`
-	Status   FileDiffStatus `json:"status"`
+	Dst    State  `json:"dst"`
+	Lines  Range  `json:"lines"`
+	Src    State  `json:"src"`
+	Status Status `json:"status"`
 }
-
-// FileDiffStatus defines model for FileDiff.Status.
-type FileDiffStatus string
 
 // LineDiff defines model for LineDiff.
 type LineDiff struct {
-	Content string         `json:"content"`
-	Status  LineDiffStatus `json:"status"`
+	Content string     `json:"content"`
+	Op      LineDiffOp `json:"op"`
 }
 
-// LineDiffStatus defines model for LineDiff.Status.
-type LineDiffStatus string
+// LineDiffOp defines model for LineDiff.Op.
+type LineDiffOp string
 
 // Range defines model for Range.
 type Range struct {
@@ -68,8 +63,18 @@ type Range struct {
 
 // State defines model for State.
 type State struct {
-	Path string `json:"path"`
+	IsBinary bool   `json:"isBinary"`
+	Path     string `json:"path"`
 }
+
+// Status defines model for Status.
+type Status struct {
+	Score *int       `json:"score,omitempty"`
+	Type  StatusType `json:"type"`
+}
+
+// StatusType defines model for Status.Type.
+type StatusType string
 
 // Error defines model for Error.
 type Error struct {
@@ -346,18 +351,19 @@ func (sh *strictHandler) GetDiffPart(ctx echo.Context, params GetDiffPartParams)
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"AAD//9WBb57/CQAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

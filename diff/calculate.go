@@ -1,16 +1,21 @@
 package diff
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"os/exec"
+	"slices"
+	"strings"
+
+	"github.com/bluekeyes/go-gitdiff/gitdiff"
 )
 
 func Calculate(
 	ctx context.Context,
 	repoPath string,
 	commitA, commitB string,
-) ([]Diff, error) {
+) ([]*Diff, error) {
 	cmd := exec.CommandContext(
 		ctx,
 		"git",
@@ -21,61 +26,60 @@ func Calculate(
 	)
 
 	cmd.Dir = repoPath
+	buffer := new(bytes.Buffer)
+	cmd.Stdout = buffer
 
-	stdout, err := cmd.Output()
+	if err := cmd.Run(); err != nil {
+		return nil, err
+	}
+
+	diffs := make(map[string]*Diff)
+
+	reader := bufio.NewReader(buffer)
+
+	files, preamble, err := gitdiff.Parse(reader)
 	if err != nil {
 		return nil, err
 	}
 
-	stdout = bytes.TrimSpace(stdout)
-	lines := bytes.Split(stdout, []byte("\n"))
-
-	diffs := make(map[string]Diff)
-
-	var (
-		patchPath string
-		patch     [][]byte
-	)
-
-	for _, line := range lines {
-		if bytes.HasPrefix(line, []byte(":")) {
-			diff, err := parseDiff(line)
-			if err != nil {
-				return nil, err
-			}
-
-			diffs[diff.Src.Path] = diff
-		} else {
-			if bytes.HasPrefix(line, []byte("diff --git")) {
-				if patchPath != "" {
-					diff := diffs[patchPath]
-					diff.Patch = bytes.Join(patch, []byte("\n"))
-					diffs[patchPath] = diff
-				}
-
-				fields := bytes.Fields(line)
-				if len(fields) < 3 {
-					return nil, ErrMalformedDiff
-				}
-
-				patchPath = string(bytes.TrimPrefix(fields[2], []byte("a/")))
-				patch = nil
-			}
-
-			patch = append(patch, line)
+	preamble = strings.TrimSpace(preamble)
+	for _, line := range strings.Split(preamble, "\n") {
+		diff, err := parseDiff([]byte(line))
+		if err != nil {
+			return nil, err
 		}
+
+		diffs[diff.Src.Path] = &diff
 	}
 
-	if patchPath != "" {
-		diff := diffs[patchPath]
-		diff.Patch = bytes.Join(patch, []byte("\n"))
-		diffs[patchPath] = diff
+	for _, file := range files {
+		var name string
+		if file.OldName != "" {
+			name = file.OldName
+		} else {
+			name = file.NewName
+		}
+
+		var lines []gitdiff.Line
+		for _, fragment := range file.TextFragments {
+			lines = append(lines, fragment.Lines...)
+		}
+
+		diff := diffs[name]
+		diff.Lines = lines
+		diff.IsBinary = file.IsBinary
+
+		diffs[name].Lines = lines
 	}
 
-	diffsSlice := make([]Diff, 0, len(diffs))
+	diffsSlice := make([]*Diff, 0, len(diffs))
 	for _, diff := range diffs {
 		diffsSlice = append(diffsSlice, diff)
 	}
+
+	slices.SortFunc(diffsSlice, func(a, b *Diff) int {
+		return strings.Compare(a.Src.Path, b.Src.Path)
+	})
 
 	return diffsSlice, nil
 }

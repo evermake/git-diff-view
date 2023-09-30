@@ -2,13 +2,16 @@ package diff
 
 import (
 	"bytes"
+
+	"github.com/bluekeyes/go-gitdiff/gitdiff"
 )
 
 type Diff struct {
-	Status Status
-	Patch  []byte
-	Src    State
-	Dst    State
+	Status   Status
+	Lines    []gitdiff.Line
+	Src      State
+	Dst      State
+	IsBinary bool
 }
 
 // parseDiff parses raw diff line (:100644 100644 bcd1234 0123456 M file0) according to
@@ -60,6 +63,8 @@ func parseDiff(raw []byte) (diff Diff, err error) {
 		}
 
 		diff.Dst.Path = string(nextField())
+	} else {
+		diff.Dst.Path = diff.Src.Path
 	}
 
 	return

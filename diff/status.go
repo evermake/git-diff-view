@@ -8,8 +8,8 @@ import (
 )
 
 type Status struct {
-	Type       StatusType
-	Percentage *int
+	Type  StatusType
+	Score *int
 }
 
 type StatusType rune
@@ -40,15 +40,15 @@ func parseStatusType(letter rune) (StatusType, bool) {
 	return t, ok
 }
 
-func parseStatusPercentage(raw []byte) (int, error) {
+func parseStatusScore(raw []byte) (int, error) {
 	buff := bytes.NewReader(raw)
 
-	var percentage int
-	if err := binary.Read(buff, binary.BigEndian, &percentage); err != nil {
+	var score int
+	if err := binary.Read(buff, binary.BigEndian, &score); err != nil {
 		return 0, err
 	}
 
-	return percentage, nil
+	return score, nil
 }
 
 func parseStatus(raw []byte) (status Status, err error) {
@@ -67,20 +67,20 @@ func parseStatus(raw []byte) (status Status, err error) {
 
 	switch status.Type {
 	case StatusCopy, StatusRename:
-		percentage, err := parseStatusPercentage(fields[1])
+		score, err := parseStatusScore(fields[1])
 		if err != nil {
 			return Status{}, err
 		}
 
-		status.Percentage = &percentage
+		status.Score = &score
 	case StatusModify:
 		if len(fields) == 2 {
-			percentage, err := parseStatusPercentage(fields[1])
+			score, err := parseStatusScore(fields[1])
 			if err != nil {
 				return Status{}, err
 			}
 
-			status.Percentage = &percentage
+			status.Score = &score
 		}
 	}
 

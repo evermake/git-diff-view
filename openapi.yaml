@@ -92,17 +92,16 @@ components:
     LineDiff:
       type: object
       required:
+        - op
         - content
-        - status
       properties:
         content:
           type: string
-        status:
+        op:
           type: string
           enum:
             - a
             - d
-            - c
     FileDiff:
       type: object
       required:

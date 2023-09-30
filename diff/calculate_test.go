@@ -5,14 +5,14 @@ import (
 	"testing"
 )
 
-func TestCalculate_Must_Have_Patch(t *testing.T) {
-	diffs, err := Calculate(context.Background(), ".", "266555338f78735f5182a8b60025ba861df85edc", "bba8505866a7172e1269f5a8cd0ceba1258c7880")
+func TestCalculate_Must_Have_Lines(t *testing.T) {
+	diffs, err := Calculate(context.Background(), ".", "4ce756ca74a9d94637312910d51c570888447157", "edf7a69bf3fa8277416895dcdf1b4dd9afaf8b81")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, diff := range diffs {
-		if diff.Patch == nil {
+		if diff.Lines == nil {
 			t.Fatalf("%s", diff.Src.Path)
 		}
 	}
