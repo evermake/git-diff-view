@@ -81,14 +81,8 @@ paths:
                 schema:
                   type: array
                   items:
-                    type: object
-                    properties:
-                      t:
-                        type: string
-                        description: "Type of the diff line \"a\" — added, \"d\" — deleted, \"c\" — common"
-                      l:
-                        type: string
-                        description: "Content of the file"
+                    type: string
+                    description: "Strings with content in the following format \"[type of diff line](one symbol: \"a\" — added, \"d\" — deleted, \"c\" — common) + file_content\""
           '400':
             description: Bad Request
             content:
