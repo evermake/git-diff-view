@@ -52,6 +52,9 @@ func (a *App) Run() error {
 	e := echo.New()
 	e.Use(middleware.CORS())
 	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+	e.Use(middleware.Gzip())
+	e.Use(middleware.Decompress())
 
 	if err := v1.RegisterHandlers(e, v1.NewServer(a.repoPath)); err != nil {
 		return err
