@@ -3,7 +3,6 @@ package diff
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"os/exec"
 )
 
@@ -16,9 +15,9 @@ func Calculate(
 		ctx,
 		"git",
 		"diff",
+		"--patch-with-raw",
 		commitA,
 		commitB,
-		"--raw",
 	)
 
 	cmd.Dir = repoPath
@@ -30,72 +29,53 @@ func Calculate(
 
 	stdout = bytes.TrimSpace(stdout)
 	lines := bytes.Split(stdout, []byte("\n"))
-	diffs := make([]Diff, len(lines))
 
-	for i, line := range lines {
-		diff, err := parseDiff(line)
-		if err != nil {
-			a := string(line)
-			fmt.Println(a)
-			return nil, err
+	diffs := make(map[string]Diff)
+
+	var (
+		patchPath string
+		patch     [][]byte
+	)
+
+	for _, line := range lines {
+		if bytes.HasPrefix(line, []byte(":")) {
+			diff, err := parseDiff(line)
+			if err != nil {
+				return nil, err
+			}
+
+			diffs[diff.Src.Path] = diff
+		} else {
+			if bytes.HasPrefix(line, []byte("diff --git")) {
+				if patchPath != "" {
+					diff := diffs[patchPath]
+					diff.Patch = bytes.Join(patch, []byte("\n"))
+					diffs[patchPath] = diff
+				}
+
+				fields := bytes.Fields(line)
+				if len(fields) < 3 {
+					return nil, ErrMalformedDiff
+				}
+
+				patchPath = string(bytes.TrimPrefix(fields[2], []byte("a/")))
+				patch = nil
+			}
+
+			patch = append(patch, line)
 		}
-
-		diffs[i] = diff
 	}
 
-	return diffs, nil
-}
-
-// parseDiff parses raw diff line (:100644 100644 bcd1234 0123456 M file0) according to
-// https://git-scm.com/docs/git-diff
-func parseDiff(raw []byte) (diff Diff, err error) {
-	// first trailing colon is removed
-	raw = bytes.TrimPrefix(raw, []byte(":"))
-
-	fields := bytes.Fields(raw)
-
-	if len(fields) < 5 || len(fields) > 6 {
-		err = ErrMalformedDiff
-		return
+	if patchPath != "" {
+		diff := diffs[patchPath]
+		diff.Patch = bytes.Join(patch, []byte("\n"))
+		diffs[patchPath] = diff
 	}
 
-	nextField := func() func() []byte {
-		n := -1
-
-		return func() []byte {
-			n++
-			return fields[n]
-		}
-	}()
-
-	diff.Src.Mode, err = parseMode(nextField())
-	if err != nil {
-		return
+	diffsSlice := make([]Diff, 0, len(diffs))
+	for _, diff := range diffs {
+		diffsSlice = append(diffsSlice, diff)
 	}
 
-	diff.Dst.Mode, err = parseMode(nextField())
-	if err != nil {
-		return
-	}
-
-	diff.Src.SHA1 = nextField()
-	diff.Dst.SHA1 = nextField()
-
-	diff.Status, err = parseStatus(nextField())
-	if err != nil {
-		return
-	}
-
-	diff.Src.Path = string(nextField())
-
-	if diff.Status.Type == StatusCopy || diff.Status.Type == StatusRename {
-		if len(fields) != 6 {
-			err = ErrMalformedDiff
-			return
-		}
-
-		diff.Dst.Path = string(nextField())
-	}
-
-	return
+	return diffsSlice, nil
 }
