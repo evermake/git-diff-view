@@ -12,17 +12,17 @@ type Status struct {
 	Percentage *int
 }
 
-type StatusType uint8
+type StatusType rune
 
 const (
-	StatusUnknown StatusType = iota
-	StatusAdd
-	StatusCopy
-	StatusDelete
-	StatusModify
-	StatusRename
-	StatusChangeType
-	StatusUnmerged
+	StatusAdd        = StatusType('A')
+	StatusCopy       = StatusType('C')
+	StatusDelete     = StatusType('D')
+	StatusModify     = StatusType('M')
+	StatusRename     = StatusType('R')
+	StatusChangeType = StatusType('T')
+	StatusUnmerged   = StatusType('U')
+	StatusUnknown    = StatusType('X')
 )
 
 func parseStatusType(letter rune) (StatusType, bool) {
