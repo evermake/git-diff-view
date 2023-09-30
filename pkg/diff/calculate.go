@@ -107,8 +107,9 @@ func Calculate(
 
 					srcLineNumber++
 				default:
-					line.Dst.Number = dstLineNumber
-					line.Dst.Content = fragmentLine.Line
+					// as per request from Vlad =)
+					//line.Dst.Number = dstLineNumber
+					//line.Dst.Content = fragmentLine.Line
 
 					line.Src.Number = srcLineNumber
 					line.Src.Content = fragmentLine.Line
