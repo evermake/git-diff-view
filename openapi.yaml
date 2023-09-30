@@ -10,11 +10,13 @@ paths:
         - name: a
           in: query
           description: First commit
+          required: true
           schema:
             type: string
         - name: b
           in: query
           description: Second commit
+          required: true
           schema:
             type: string
       responses:
@@ -24,31 +26,18 @@ paths:
             application/json:
               schema:
                 type: object
+                required:
+                  - linesTotal
+                  - files
                 properties:
-                  lines_total:
+                  linesTotal:
                     type: integer
                   files:
                     type: array
                     items:
-                      type: object
-                      properties:
-                        path:
-                          type: string
-                        is_binary:
-                          type: boolean
-                        start_line:
-                          type: integer
-                        end_line:
-                          type: integer
+                      $ref: '#/components/schemas/FileDiff'
         '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error_message:
-                    type: string
+          $ref: '#/components/responses/Error'
   /diff/part:
     get:
       summary: "Get information about partial diff between a and b for given startline and endline"
@@ -56,23 +45,27 @@ paths:
         - name: a
           in: query
           description: First commit
+          required: true
           schema:
             type: string
         - name: b
           in: query
           description: Second commit
+          required: true
           schema:
             type: string
         - name: start
           in: query
           description: Start line of the diff
+          required: true
           schema:
             type: integer
         - name: end
           in: query
-          description: Endline for the diff
+          required: true
+          description: End line for the diff
           schema:
-            type: integer 
+            type: integer
       responses:
           '200':
             description: Successful response
@@ -81,14 +74,57 @@ paths:
                 schema:
                   type: array
                   items:
-                    type: string
-                    description: "Strings with content in the following format \"[type of diff line](one symbol: \"a\" — added, \"d\" — deleted, \"c\" — common) + file_content\""
+                    $ref: '#/components/schemas/LineDiff'
           '400':
-            description: Bad Request
-            content:
-              application/json:
-                schema:
-                  type: object
-                  properties:
-                    error_message:
-                      type: string
+            $ref: '#/components/responses/Error'
+components:
+  schemas:
+    Range:
+      type: object
+      required:
+        - start
+        - end
+      properties:
+        start:
+          type: integer
+        end:
+          type: integer
+    LineDiff:
+      type: object
+      required:
+        - content
+        - status
+      properties:
+        content:
+          type: string
+        status:
+          type: string
+          enum:
+            - a
+            - d
+            - c
+    FileDiff:
+      type: object
+      required:
+        - path
+        - isBinary
+        - lines
+      properties:
+        path:
+          type: string
+        isBinary:
+          type: boolean
+        lines:
+          $ref: '#/components/schemas/Range'
+  responses:
+    Error:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - message
+            properties:
+              message:
+                type: string
