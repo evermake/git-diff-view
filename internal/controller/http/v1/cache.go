@@ -1,8 +1,8 @@
-package http
+package v1
 
 import (
-	"github.com/evermake/git-diff-view/controller/http/openapi"
-	"github.com/evermake/git-diff-view/diff"
+	"github.com/evermake/git-diff-view/internal/controller/http/v1/openapi"
+	"github.com/evermake/git-diff-view/pkg/diff"
 )
 
 type diffCache struct {

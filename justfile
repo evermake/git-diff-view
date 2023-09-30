@@ -1,5 +1,8 @@
 #!/usr/bin/env just --justfile
 
+build:
+    go build -o app ./cmd/app
+
 generate:
     go generate ./...
     oapi-codegen --config oapi.cfg.yaml openapi.yaml

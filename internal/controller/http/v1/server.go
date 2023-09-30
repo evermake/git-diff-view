@@ -1,4 +1,4 @@
-package http
+package v1
 
 import (
 	"context"
@@ -6,8 +6,8 @@ import (
 	"sort"
 
 	"github.com/bluekeyes/go-gitdiff/gitdiff"
-	"github.com/evermake/git-diff-view/controller/http/openapi"
-	"github.com/evermake/git-diff-view/diff"
+	"github.com/evermake/git-diff-view/internal/controller/http/v1/openapi"
+	"github.com/evermake/git-diff-view/pkg/diff"
 	"github.com/samber/lo"
 )
 
@@ -113,7 +113,7 @@ func (s *Server) GetDiffPart(ctx context.Context, request openapi.GetDiffPartReq
 	if startFile == len(diffs) {
 		return openapi.GetDiffPart400JSONResponse{
 			ErrorJSONResponse: openapi.ErrorJSONResponse{
-				Message: "start is out of range",
+				Error: "start is out of range",
 			},
 		}, nil
 	}
@@ -126,7 +126,7 @@ func (s *Server) GetDiffPart(ctx context.Context, request openapi.GetDiffPartReq
 	if endFile == len(diffs) {
 		return openapi.GetDiffPart400JSONResponse{
 			ErrorJSONResponse: openapi.ErrorJSONResponse{
-				Message: "end is out of range",
+				Error: "end is out of range",
 			},
 		}, nil
 	}

@@ -38,6 +38,11 @@ const (
 	StatusTypeX StatusType = "X"
 )
 
+// Error defines model for Error.
+type Error struct {
+	Error string `json:"error"`
+}
+
 // FileDiff defines model for FileDiff.
 type FileDiff struct {
 	Dst    State  `json:"dst"`
@@ -75,11 +80,6 @@ type Status struct {
 
 // StatusType defines model for Status.Type.
 type StatusType string
-
-// Error defines model for Error.
-type Error struct {
-	Message string `json:"message"`
-}
 
 // GetDiffMapParams defines parameters for GetDiffMap.
 type GetDiffMapParams struct {
@@ -217,9 +217,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 
 }
 
-type ErrorJSONResponse struct {
-	Message string `json:"message"`
-}
+type ErrorJSONResponse Error
 
 type GetDiffMapRequestObject struct {
 	Params GetDiffMapParams
@@ -351,19 +349,19 @@ func (sh *strictHandler) GetDiffPart(ctx echo.Context, params GetDiffPartParams)
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/9xVT2sbPxD9KmJ+P/BFxE7b097yn0ADIUmhEHIY7846Cqs/kbRpTfB3LyPZa8drxw6h",
-	"l9600mje6M2bt69QWu2sIRMDFK/gKThrAqWPM++t50VpTSQTeYnONarEqKwZPgVreC+Uj6SRV85bRz6q",
-	"fF9TCDghXsapIyggRK/MBGYzCZ6eW+WpguK+C3yQi0A7fqIywowjKwqlV44hoYBjrATfpRBTngye8M5V",
-	"Q6eqrvuVVCEV/7+nGgr4b7h89HB+f3gbMRLMJDTK5EvvRd+gmaTo4Mu9M4eIsQ37hLehx9H8ckaU6UWL",
-	"Wvu0SfiuzBYuVpq51hUJ1vE2mVYzJDLOSvYt3bMOZJd1Uy2ZrF4hZKqVIpSJNCE/58nHTUd9SjyzwIk2",
-	"4Wbie7gqHCuDfrqCMLa2ITR8yWF83K3YFCWXqbbB53a/xQ+l9aksjb+VZqoPRyMJWpn8NZIbOMk7y94c",
-	"gYQTkHAKEq5Awg1IuAMJP0DCz909S6ebx02Z2iYCVGz4jFUkjq4vQcIL+ZCn8PBgdDDKiiGDTkEBX9NW",
-	"JjC9c1ipuh5qTJqaUOoo85DM47KCAi4ocvYrdOmeR02RfIDi/nVt6s+VD1GUVmvFHVe899ySn4IEg5rr",
-	"ZLUunxh9S3LFmXp0rCPcUmlN9T7E+EMQD/KtnX4ZjT5hprVq5vKNpHeaSGeFnXQAvcdpZ3B3NmKzx4yt",
-	"BMt5Dfu49G1blhRC3TZiwQFDf8sUbKq8o2qYfzvJ21ut06DCCTZl22AkER9JsLDIkylJjCn+IjJigAOB",
-	"phKD8UDU1guNzikzOUh5shLd3FXek+J1dpR/Tot9CPZOwd0Vtu5I3YK1MNqdeCsqWgc8M1WG4+7swGND",
-	"/xDaZ0dtr5nqfqm9mfr7+r+gKNiYvU5PEDi2bRSsaIVNorKbBExzME48T9QLGZHal7jnEzIVr7nq2Z8A",
-	"AAD//9WBb57/CQAA",
+	"H4sIAAAAAAAC/9xVy2ojOxD9FVH3gjcidu6dVe/yJjCBkGRgIGQhd1c7Cq1HpOrMmOB/H0qy24+2Y4dh",
+	"NrNTS6U6pVOnTr9D6Yx3Fi1FKN4hYPTORkwfFyG4wIvSWUJLvFTeN7pUpJ0dvkRneS+Wz2gUr/4NWEMB",
+	"/wyXWYf5NA5zttlsJqHCWAbtOQkUcKoqEfC1xUjAp/MLaxX44DwG0rkwXGzT1CMUECloO0mXOZEOWEHx",
+	"OA97koswN37BkmAm4VI3eK7rup+6irTvIfekCDlLo22+9FH0nbKTFB1DeXDmSIraeEh4G3vPnl/OiDK9",
+	"aFHrNi6+aruDi5W2bxAtwfnUCNsahlSMs5J9R0OcB9ll3VZLJqvfb1utFKEt4QTDnKdA2476lARmgRNt",
+	"w83E93B1PNVWhekKwti5BpXlS17R834Rpii5TLULPrd7HT+WLqSyjPqpDVN9PBpJMNrmr5HcwkneWfbm",
+	"BCScgYRzkHADEu5AwgNI+AYSvu/vWTrtF81h2tYuEaCp4TNWkTi5vQYJbxhinu7jo9HRKCsGrfIaCvg/",
+	"bWUC0zuHla7roVFJUxNMHWUeks1cV1DAFRJnv1E+3QvKIGGIUDy+b7jJpQ6RROmM0dxxzXuvLYYpSLDK",
+	"cJ2s1uUTKbQoVzysR8cmwj2WzlYfQ4w/BfEk1433v9HoU7a7rppaN3P5Epq9JtJZYScdUCGoaWdwD45U",
+	"c8CMrQTLeQ3bZbPBZluWGGPdNmLBAUN/yRRsq7yjqvulSIitMWlQ4Uw1ZdsoQkHPKFhYGNCWKMZIPxCt",
+	"GKiBULYSg/FA1C4Io7zXdnKU8mQl+rmrfCTF2+wof50W+xDsnYK7K1zdkboDa2G0e/FWVLQJeGGrDMfd",
+	"2YPHhv4ptN8dtYNmqvul9mbqz+v/CkmwMQeTniDU2LUkWNFaNYnKbhJUmoNx4nmi39CK1L7EPZ+grXjN",
+	"Vc9+BQAA///GPPDMKQoAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

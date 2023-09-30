@@ -148,15 +148,17 @@ components:
           type: string
         isBinary:
           type: boolean
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
   responses:
     Error:
       description: Bad request
       content:
         application/json:
           schema:
-            type: object
-            required:
-              - message
-            properties:
-              message:
-                type: string
+            $ref: '#/components/schemas/Error'
