@@ -20,19 +20,36 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+// Defines values for FileDiffStatus.
+const (
+	FileDiffStatusA FileDiffStatus = "A"
+	FileDiffStatusC FileDiffStatus = "C"
+	FileDiffStatusD FileDiffStatus = "D"
+	FileDiffStatusM FileDiffStatus = "M"
+	FileDiffStatusR FileDiffStatus = "R"
+	FileDiffStatusT FileDiffStatus = "T"
+	FileDiffStatusU FileDiffStatus = "U"
+	FileDiffStatusX FileDiffStatus = "X"
+)
+
 // Defines values for LineDiffStatus.
 const (
-	A LineDiffStatus = "a"
-	C LineDiffStatus = "c"
-	D LineDiffStatus = "d"
+	LineDiffStatusA LineDiffStatus = "a"
+	LineDiffStatusC LineDiffStatus = "c"
+	LineDiffStatusD LineDiffStatus = "d"
 )
 
 // FileDiff defines model for FileDiff.
 type FileDiff struct {
-	IsBinary bool   `json:"isBinary"`
-	Lines    Range  `json:"lines"`
-	Path     string `json:"path"`
+	Dst      State          `json:"dst"`
+	IsBinary bool           `json:"isBinary"`
+	Lines    Range          `json:"lines"`
+	Src      State          `json:"src"`
+	Status   FileDiffStatus `json:"status"`
 }
+
+// FileDiffStatus defines model for FileDiff.Status.
+type FileDiffStatus string
 
 // LineDiff defines model for LineDiff.
 type LineDiff struct {
@@ -47,6 +64,11 @@ type LineDiffStatus string
 type Range struct {
 	End   int `json:"end"`
 	Start int `json:"start"`
+}
+
+// State defines model for State.
+type State struct {
+	Path string `json:"path"`
 }
 
 // Error defines model for Error.
@@ -324,17 +346,18 @@ func (sh *strictHandler) GetDiffPart(ctx echo.Context, params GetDiffPartParams)
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/9xVQU/cOhD+K9a8J+0lIvtee8qttICQWgmV3hCHiTMJRvHY2A4VQvvfq3F2Q7q7sCDU",
-	"S2/eeDzfNzPfN/sI2lnvmDhFqB4hUPSOI+UfJyG4IAftOBEnOaL3vdGYjOPyNjqWb1HfkEU5+eA8hWTG",
-	"95ZixI7kmB48QQUxBcMdrFYFBLobTKAGqqsp8LrYBLr6lnSClUQ2FHUwXiChgmNslLylmHKeETzjnZqe",
-	"vpi23WVi4rFhDA8zKrVzPSHDqoDe8Bj2b6AWKvinfGpKuc5ffkfuSKI9ppvDJeWo4gl4g7JbYgFfDT/D",
-	"e9b4LbgCYsI05CjiwQomQgENFKBnKM/Q2ySe0uzjNZa8Q4q4mREynKijsGYU0r6rLfAxrsiJ9o/ccOty",
-	"IpN6uZPuqE8X51DAPYU4KuG/o+XRUnCdJ0ZvoIIP+dM4o8y1bEzblha9/Ogos5NasoDPG6jgjJJk/4Y+",
-	"vwtoKVGIUF09binv1ISYlHbWGmFv5NvdQHm4jFZ4ygSeKk1hoGLmjp2RbCNcknbcvAxRvwniuvjd0v8v",
-	"l+8wdGv6tZ8S2YOOmey4mmaMIeDDZLkfLmH/Cr3Mgos1h9dsistBa4qxHXq16YFAfxxbsI/51KpyXH15",
-	"vwzW5s0Bn7HXQ4+JVLohJcKiQKxJ1ZR+ErFa4EIhN2pRL1TrgrLoveHuKOcZlejXDnlJihejO/46Le5C",
-	"yB5QMl3l2qmpz2BtlsZBvJmKtgFPuBnhZDoH8GQ5vQntvVZ7laemv4odT/15/Z9RUrKYg80lKKzdkJQo",
-	"2mCfWzk5AbMP6tznztwTqzy+3Hu5IW7kLKxXvwIAAP//pQCQD4MIAAA=",
+	"H4sIAAAAAAAC/9xVTWvjMBD9K2J2IRfRZD9OvvWbwhZK24WF0sPEHrsqtqRK4y6l5L8vIyeuN06blLKX",
+	"vSmWNO/N05uXZ8hd450lyxGyZwgUvbOR0o/jEFyQRe4sk2VZove1yZGNs9P76Kx8i/kdNSgrH5ynwKa7",
+	"31CMWJEs+ckTZBA5GFvBYqEh0ENrAhWQ3fQHb/XqoJvfU86wkJMFxTwYL5CQwQEWSu5S5FSnA094J6am",
+	"I1OWYyZFTOQ/Byohg0/Tl6any/vTK0YmWGgw8cBYDE8D2nPnakIru7WxXcm3al2irVKtGPKdcSMjt6k0",
+	"2bYRWfZBwyFoOAIN56DhEjRcg4afoOHXQKxXVF0W7FjopMGgu1UrY801/DD2FSEHTlgD39QACixoyLeT",
+	"XRXuy2zi1ek6IkW2GBAylqmisGQUeNPWWKkg0FJoE273RiNcj3y33dzp1GZnG1u6VMBwLXuiudq/OAMN",
+	"jxRiZ/gve7O9mbBwnix6Axl8S590Kp2YTAtTltMGvfyoKPUsTNOcnhWQwSmxVD9Hn+4FbIgpRMhuntcG",
+	"7MSEyCp3TWOSYeTbQ0vJMhYb4Snv+tIih5b0IARGcqwjXFHubPE2xPxdELf67+T6Opt9ILdKU3cLw9Rs",
+	"HfY+dRb9G2MI+NSnxbVjrHdw4eCwXnLYJRCv2jynGMu2VisNBPp7J8Em5r1U0y7hU4y2TZNCDw6xztsa",
+	"mRTfkRJjUSCbk5oT/yayaoIThbZQk/lElS6oBr03ttpLdTon+uXcvWXFi27m/jsvjiEkXZS8rnJlL+or",
+	"WKso2oo3cNE64LEtOjh5nS14EnnvQvvoqO00U/0f0Gim/r3/T4mVBHNoUgsK565lJY42WCcp+0nANAfz",
+	"pHNlHsmq9HxJe9khW8haWC/+BAAA//9DFw2ragkAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
