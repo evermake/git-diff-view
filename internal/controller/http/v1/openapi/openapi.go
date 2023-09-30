@@ -20,10 +20,11 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// Defines values for LineDiffOp.
+// Defines values for LineDiffOperation.
 const (
-	LineDiffOpA LineDiffOp = "a"
-	LineDiffOpD LineDiffOp = "d"
+	LineDiffOperationA LineDiffOperation = "A"
+	LineDiffOperationD LineDiffOperation = "D"
+	LineDiffOperationM LineDiffOperation = "M"
 )
 
 // Defines values for StatusType.
@@ -54,14 +55,19 @@ type FileDiff struct {
 
 // LineDiff defines model for LineDiff.
 type LineDiff struct {
-	Content       string     `json:"content"`
-	DstLineNumber int64      `json:"dstLineNumber"`
-	Op            LineDiffOp `json:"op"`
-	SrcLineNumber int64      `json:"srcLineNumber"`
+	Dst       LineState         `json:"dst"`
+	Operation LineDiffOperation `json:"operation"`
+	Src       LineState         `json:"src"`
 }
 
-// LineDiffOp defines model for LineDiff.Op.
-type LineDiffOp string
+// LineDiffOperation defines model for LineDiff.Operation.
+type LineDiffOperation string
+
+// LineState defines model for LineState.
+type LineState struct {
+	Content string `json:"content"`
+	Number  int64  `json:"number"`
+}
 
 // Range defines model for Range.
 type Range struct {
@@ -115,10 +121,10 @@ type GetFileParams struct {
 	// Path Path to the file
 	Path string `form:"path" json:"path"`
 
-	// Start Start line number
+	// Start Start line number. Defaults to 0 if omitted. Using a value that is out of bounds will be rounded to the closest bound.
 	Start *int `form:"start,omitempty" json:"start,omitempty"`
 
-	// End End line number. Defaults to the last line of the file
+	// End End line number. Defaults to the last line of the file if omitted. Using a value that is out of bounds will be rounded to the closest bound.
 	End *int `form:"end,omitempty" json:"end,omitempty"`
 }
 
@@ -463,21 +469,22 @@ func (sh *strictHandler) GetFile(ctx echo.Context, params GetFileParams) error {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"H4sIAAAAAAAC/9xXwW7cNhD9FWJawBdid9MGPezNiZ00QAMYTgIUSHMYSaM1A5FUyJFTw9h/L4bclbUr",
+	"2bKbNofcKJGcN/P43lC6hdLb1jtyHGF9C4Fi612k9HAegg8yKL1jcixDbNvGlMjGu+Xn6J28i+UVWZTR",
+	"z4FqWMNPy7uoyzwblznadrvVUFEsg2klCKzhBVYq0JeOIoPM7jYcZNAG31JgkxOzFCNuSIZ80xKsIXIw",
+	"bpO2SygTqIL1x37hJ71f6IvPVDJsNbwyDZ2Zuh6HryLPFfOOkUmimPjCOAw3g1wK7xtCJ7ONcTnkQ7Eu",
+	"0W1SrBjKR+NGRu7iY5Z3cUTLbnNG1Knefa6DiqZI+8O4f0+abO4LkL2YFXAL5Dorib0FDaeg4WwAvj/a",
+	"R/EzgDiq+Q5vWPZ9NeYYoyIHRhhl5zpbUBJr7YNFhjUYx789hx7COKYNhVFqu526Dz+VVVbJKCNy1SCb",
+	"HiEJJPDU1FgLQY5fAk3h3sNEi3w177+06r6oWb6HYWPpQ0Kz+LexIopnq5UGa1x+WumJUvObOxWJgl4m",
+	"FemkqEvQ8B40fAANf04o6yjpNDtOWpYZV/tUteFG5sQK6vTiDWi4phBzP3u2WC1WO4k7bA2s4df0Sic+",
+	"Up3LytT10mIrDxtKB9Ur9E0Fa3hNLNHfYpv2BbTEFCKsP94e9c9XJkRWpbfWyEEaefelo3ADGhxayRNh",
+	"WCKHjvSga4/oOEZ4R6V31cMQxZMgPunDq+aX1epJF82hamrT5IFhsrNNsW/8vXQAQ8CbvmG/94zNI6wz",
+	"WKx3OUzL5ojNriwpxrpr1J4DgX6eKZjKvKeqv0Q1xM7adO/AS2zKrkEmxVekRFgUyJWkCuKvRE6d4IlC",
+	"V6mT4kTVPiiLbWvcZpHiZCW2u2bxkBQvcqP44bQ4hpCWqOR0la97Uu/B2vfPWbyBio4Bz12V4eR0ZvCk",
+	"Tz8J7Vut9ihP9d8FI0/9//p/TaykMcula7xTWPiOlSjaYJOo7J2AyQdF4nljrsmpdHyJe5khV8k4G0Mc",
+	"/ZAnpI/M+eGSro1cC3sh1XnP1MGG3VIYnmZFNXaNfEv8fn56BnpevBfIV4r9HFq6mf8rl+QPmIU6y9lG",
+	"wV8pUytvDTNVC/UhGrdRqK6x6aRPISsTlZyTr1XhO1dF9dU0jSpIBXmkal9E2fhIkfOqxV9uxocT3K30",
+	"Uzw4VYzk0WA8bArC7ncuMpv/e5h99Hk752rpAPFA5t/q6cTvLnP5h9lu/wkAAP//SCwUvK4OAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

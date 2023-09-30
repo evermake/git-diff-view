@@ -1,9 +1,20 @@
 package diff
 
-import "github.com/bluekeyes/go-gitdiff/gitdiff"
+type LineOperation rune
+
+const (
+	LineOperationModify = LineOperation('M')
+	LineOperationAdd    = LineOperation('A')
+	LineOperationDelete = LineOperation('D')
+)
 
 type Line struct {
-	Op                       gitdiff.LineOp
-	Content                  string
-	NumberInSrc, NumberInDst int64
+	Operation LineOperation
+	Src       LineState
+	Dst       LineState
+}
+
+type LineState struct {
+	Number  int64
+	Content string
 }

@@ -5,7 +5,6 @@ import (
 	"math"
 	"strings"
 
-	"github.com/bluekeyes/go-gitdiff/gitdiff"
 	"github.com/evermake/git-diff-view/internal/controller/http/v1/openapi"
 	"github.com/evermake/git-diff-view/pkg/diff"
 	"github.com/evermake/git-diff-view/pkg/gitutil"
@@ -65,7 +64,7 @@ func (s *Server) getDiffs(ctx context.Context, commitA, commitB string) ([]*comb
 
 		{
 			start := lineNumber + 1
-			end := start + len(d.Lines)
+			end := start + len(d.Lines) - 1
 
 			entry.FileDiff.Lines = openapi.Range{
 				Start: start,
@@ -111,11 +110,17 @@ func (s *Server) GetFile(ctx context.Context, request openapi.GetFileRequestObje
 	if file := s.fileCache.Get(revision + request.Params.Path); file != nil {
 		lines := file.Value()
 
-		if start < 0 || start >= len(lines) {
+		if start < 0 {
 			start = 0
 		}
+		if start >= len(lines) {
+			start = len(lines) - 1
+		}
 
-		if end < 0 || end >= len(lines) {
+		if end < 0 {
+			end = 0
+		}
+		if end >= len(lines) {
 			end = len(lines)
 		}
 
@@ -173,7 +178,7 @@ func (s *Server) GetDiffPart(ctx context.Context, request openapi.GetDiffPartReq
 		}, nil
 	}
 
-	start, end := request.Params.Start, request.Params.End
+	start, end := request.Params.Start-1, request.Params.End-1
 
 	if start > end {
 		return openapi.GetDiffPart400JSONResponse{
@@ -188,7 +193,7 @@ func (s *Server) GetDiffPart(ctx context.Context, request openapi.GetDiffPartReq
 		lines = append(lines, d.Diff.Lines...)
 	}
 
-	if start <= 0 || start >= len(lines) {
+	if start < 0 || start >= len(lines) {
 		return openapi.GetDiffPart400JSONResponse{
 			ErrorJSONResponse: openapi.ErrorJSONResponse{
 				Message: "start is out of bounds",
@@ -196,7 +201,7 @@ func (s *Server) GetDiffPart(ctx context.Context, request openapi.GetDiffPartReq
 		}, nil
 	}
 
-	if end <= 0 || end >= len(lines) {
+	if end < 0 || end >= len(lines) {
 		return openapi.GetDiffPart400JSONResponse{
 			ErrorJSONResponse: openapi.ErrorJSONResponse{
 				Message: "end is out of bounds",
@@ -204,20 +209,27 @@ func (s *Server) GetDiffPart(ctx context.Context, request openapi.GetDiffPartReq
 		}, nil
 	}
 
-	linesDiff := lo.Map(lines[start:end], func(line diff.Line, _ int) openapi.LineDiff {
-		var op openapi.LineDiffOp
-		switch line.Op {
-		case gitdiff.OpAdd:
-			op = openapi.LineDiffOpA
-		case gitdiff.OpDelete:
-			op = openapi.LineDiffOpD
+	linesDiff := lo.Map(lines[start:end+1], func(line diff.Line, _ int) openapi.LineDiff {
+		var operation openapi.LineDiffOperation
+		switch line.Operation {
+		case diff.LineOperationModify:
+			operation = openapi.LineDiffOperationM
+		case diff.LineOperationAdd:
+			operation = openapi.LineDiffOperationA
+		case diff.LineOperationDelete:
+			operation = openapi.LineDiffOperationD
 		}
 
 		return openapi.LineDiff{
-			Content:       line.Content,
-			SrcLineNumber: line.NumberInSrc,
-			DstLineNumber: line.NumberInDst,
-			Op:            op,
+			Operation: operation,
+			Dst: openapi.LineState{
+				Content: line.Dst.Content,
+				Number:  line.Dst.Number,
+			},
+			Src: openapi.LineState{
+				Content: line.Src.Content,
+				Number:  line.Src.Number,
+			},
 		}
 	})
 

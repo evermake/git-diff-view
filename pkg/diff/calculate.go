@@ -1,7 +1,6 @@
 package diff
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"fmt"
@@ -52,15 +51,14 @@ func Calculate(
 		return nil, err
 	}
 
+	// No changes
 	if stdout.Len() == 0 {
 		return nil, nil
 	}
 
 	diffs := make(map[string]*Diff)
 
-	reader := bufio.NewReader(stdout)
-
-	files, preamble, err := gitdiff.Parse(reader)
+	files, preamble, err := gitdiff.Parse(stdout)
 	if err != nil {
 		return nil, err
 	}
@@ -91,26 +89,71 @@ func Calculate(
 			)
 
 			for _, fragmentLine := range fragment.Lines {
-				line := Line{
-					Op:      fragmentLine.Op,
-					Content: fragmentLine.Line,
-				}
+				line := Line{}
 
 				switch fragmentLine.Op {
 				case gitdiff.OpAdd:
-					line.NumberInDst = dstLineNumber
+					line.Dst.Number = dstLineNumber
+					line.Dst.Content = fragmentLine.Line
+
+					line.Operation = LineOperationAdd
+
 					dstLineNumber++
 				case gitdiff.OpDelete:
-					line.NumberInSrc = srcLineNumber
+					line.Src.Number = srcLineNumber
+					line.Src.Content = fragmentLine.Line
+
+					line.Operation = LineOperationDelete
+
 					srcLineNumber++
 				default:
-					line.NumberInDst = dstLineNumber
-					line.NumberInSrc = srcLineNumber
+					line.Dst.Number = dstLineNumber
+					line.Dst.Content = fragmentLine.Line
+
+					line.Src.Number = srcLineNumber
+					line.Src.Content = fragmentLine.Line
+
 					dstLineNumber++
 					srcLineNumber++
 				}
 
 				lines = append(lines, line)
+			}
+		}
+
+		var (
+			deletedLinesIndices []int
+			addedLinesIndices   []int
+		)
+
+		for i, line := range lines {
+			switch line.Operation {
+			case LineOperationAdd:
+				addedLinesIndices = append(addedLinesIndices, i)
+			case LineOperationDelete:
+				deletedLinesIndices = append(deletedLinesIndices, i)
+			default:
+				window := min(len(deletedLinesIndices), len(addedLinesIndices))
+
+				// update operation to modify for deleted lines
+				// also set new contents to dst
+				for cursor := 0; cursor < window; cursor++ {
+					deletedLineIndex := deletedLinesIndices[cursor]
+					addedLineIndex := addedLinesIndices[cursor]
+
+					lines[deletedLineIndex].Operation = LineOperationModify
+					lines[deletedLineIndex].Dst = lines[addedLineIndex].Dst
+				}
+
+				// remove lines with add operation that participated in modify
+				if window > 0 && len(addedLinesIndices) != 0 {
+					index := addedLinesIndices[0]
+					lines = append(lines[:index], lines[index+window:]...)
+				}
+
+				// reset
+				addedLinesIndices = nil
+				deletedLinesIndices = nil
 			}
 		}
 

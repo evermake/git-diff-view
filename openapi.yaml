@@ -21,13 +21,19 @@ paths:
             type: string
         - name: start
           in: query
-          description: Start line number
+          description: >
+            Start line number.
+            Defaults to 0 if omitted.
+            Using a value that is out of bounds will be rounded to the closest bound.
           schema:
             type: integer
             default: 0
         - name: end
           in: query
-          description: End line number. Defaults to the last line of the file
+          description: >
+            End line number.
+            Defaults to the last line of the file if omitted.
+            Using a value that is out of bounds will be rounded to the closest bound.
           schema:
             type: integer
       responses:
@@ -127,27 +133,34 @@ components:
           type: integer
         end:
           type: integer
-    LineDiff:
+    LineState:
       type: object
       required:
-        - op
+        - number
         - content
-        - srcLineNumber
-        - dstLineNumber
       properties:
-        srcLineNumber:
-          type: integer
-          format: int64
-        dstLineNumber:
+        number:
           type: integer
           format: int64
         content:
           type: string
-        op:
+    LineDiff:
+      type: object
+      required:
+        - operation
+        - src
+        - dst
+      properties:
+        src:
+          $ref: '#/components/schemas/LineState'
+        dst:
+          $ref: '#/components/schemas/LineState'
+        operation:
           type: string
           enum:
-            - a
-            - d
+            - M
+            - A
+            - D
     FileDiff:
       type: object
       required:
