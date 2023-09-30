@@ -6,7 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func RegisterHandlers(e *echo.Echo) error {
+func RegisterHandlers(e *echo.Echo, server *Server) error {
 	swagger, err := openapi.GetSwagger()
 	if err != nil {
 		return err
@@ -16,7 +16,7 @@ func RegisterHandlers(e *echo.Echo) error {
 	e.Use(middleware.OapiRequestValidator(swagger))
 
 	openapi.RegisterHandlers(e, openapi.NewStrictHandler(
-		NewServer(),
+		server,
 		nil,
 	))
 

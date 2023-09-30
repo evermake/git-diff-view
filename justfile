@@ -1,10 +1,16 @@
 #!/usr/bin/env just --justfile
 
-run:
-    go run ./cmd/app
+app := "git-diff-server"
 
 build:
-    go build -o app ./cmd/app
+    go build -o {{ app }} ./cmd/app
+
+install path: build
+    cp {{ app }} {{ path }}
+    rm {{ app }}
+
+clean:
+    rm {{ app }}
 
 generate:
     go generate ./...

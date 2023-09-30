@@ -3,7 +3,6 @@ package v1
 import (
 	"context"
 	"math"
-	"os"
 	"strings"
 
 	"github.com/bluekeyes/go-gitdiff/gitdiff"
@@ -16,8 +15,9 @@ import (
 
 var _ openapi.StrictServerInterface = (*Server)(nil)
 
-func NewServer() *Server {
+func NewServer(repoPath string) *Server {
 	return &Server{
+		repoPath: repoPath,
 		diffCache: ttlcache.New[string, []*combinedDiff](
 			ttlcache.WithCapacity[string, []*combinedDiff](10),
 		),
@@ -28,6 +28,7 @@ func NewServer() *Server {
 }
 
 type Server struct {
+	repoPath  string
 	fileCache *ttlcache.Cache[string, []string]
 	diffCache *ttlcache.Cache[string, []*combinedDiff]
 }
@@ -37,12 +38,7 @@ func (s *Server) getDiffs(ctx context.Context, commitA, commitB string) ([]*comb
 		return entry.Value(), nil
 	}
 
-	wd, err := os.Getwd()
-	if err != nil {
-		return nil, err
-	}
-
-	diffs, err := diff.Calculate(ctx, wd, commitA, commitB)
+	diffs, err := diff.Calculate(ctx, s.repoPath, commitA, commitB)
 	if err != nil {
 		return nil, err
 	}
