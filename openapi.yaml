@@ -94,7 +94,15 @@ components:
       required:
         - op
         - content
+        - srcLineNumber
+        - dstLineNumber
       properties:
+        srcLineNumber:
+          type: integer
+          format: int64
+        dstLineNumber:
+          type: integer
+          format: int64
         content:
           type: string
         op:
@@ -109,6 +117,7 @@ components:
         - src
         - dst
         - lines
+        - isBinary
       properties:
         status:
           $ref: '#/components/schemas/Status'
@@ -116,6 +125,8 @@ components:
           $ref: '#/components/schemas/State'
         dst:
           $ref: '#/components/schemas/State'
+        isBinary:
+          type: boolean
         lines:
           $ref: '#/components/schemas/Range'
     Status:
@@ -142,18 +153,15 @@ components:
       type: object
       required:
         - path
-        - isBinary
       properties:
         path:
           type: string
-        isBinary:
-          type: boolean
     Error:
       type: object
       required:
-        - error
+        - message
       properties:
-        error:
+        message:
           type: string
   responses:
     Error:

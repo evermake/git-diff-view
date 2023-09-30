@@ -2,13 +2,11 @@ package diff
 
 import (
 	"bytes"
-
-	"github.com/bluekeyes/go-gitdiff/gitdiff"
 )
 
 type Diff struct {
 	Status   Status
-	Lines    []gitdiff.Line
+	Lines    []Line
 	Src      State
 	Dst      State
 	IsBinary bool

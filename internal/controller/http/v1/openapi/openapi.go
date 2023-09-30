@@ -40,21 +40,24 @@ const (
 
 // Error defines model for Error.
 type Error struct {
-	Error string `json:"error"`
+	Message string `json:"message"`
 }
 
 // FileDiff defines model for FileDiff.
 type FileDiff struct {
-	Dst    State  `json:"dst"`
-	Lines  Range  `json:"lines"`
-	Src    State  `json:"src"`
-	Status Status `json:"status"`
+	Dst      State  `json:"dst"`
+	IsBinary bool   `json:"isBinary"`
+	Lines    Range  `json:"lines"`
+	Src      State  `json:"src"`
+	Status   Status `json:"status"`
 }
 
 // LineDiff defines model for LineDiff.
 type LineDiff struct {
-	Content string     `json:"content"`
-	Op      LineDiffOp `json:"op"`
+	Content       string     `json:"content"`
+	DstLineNumber int64      `json:"dstLineNumber"`
+	Op            LineDiffOp `json:"op"`
+	SrcLineNumber int64      `json:"srcLineNumber"`
 }
 
 // LineDiffOp defines model for LineDiff.Op.
@@ -68,8 +71,7 @@ type Range struct {
 
 // State defines model for State.
 type State struct {
-	IsBinary bool   `json:"isBinary"`
-	Path     string `json:"path"`
+	Path string `json:"path"`
 }
 
 // Status defines model for Status.
@@ -349,19 +351,19 @@ func (sh *strictHandler) GetDiffPart(ctx echo.Context, params GetDiffPartParams)
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/9xVy2ojOxD9FVH3gjcidu6dVe/yJjCBkGRgIGQhd1c7Cq1HpOrMmOB/H0qy24+2Y4dh",
-	"NrNTS6U6pVOnTr9D6Yx3Fi1FKN4hYPTORkwfFyG4wIvSWUJLvFTeN7pUpJ0dvkRneS+Wz2gUr/4NWEMB",
-	"/wyXWYf5NA5zttlsJqHCWAbtOQkUcKoqEfC1xUjAp/MLaxX44DwG0rkwXGzT1CMUECloO0mXOZEOWEHx",
-	"OA97koswN37BkmAm4VI3eK7rup+6irTvIfekCDlLo22+9FH0nbKTFB1DeXDmSIraeEh4G3vPnl/OiDK9",
-	"aFHrNi6+aruDi5W2bxAtwfnUCNsahlSMs5J9R0OcB9ll3VZLJqvfb1utFKEt4QTDnKdA2476lARmgRNt",
-	"w83E93B1PNVWhekKwti5BpXlS17R834Rpii5TLULPrd7HT+WLqSyjPqpDVN9PBpJMNrmr5HcwkneWfbm",
-	"BCScgYRzkHADEu5AwgNI+AYSvu/vWTrtF81h2tYuEaCp4TNWkTi5vQYJbxhinu7jo9HRKCsGrfIaCvg/",
-	"bWUC0zuHla7roVFJUxNMHWUeks1cV1DAFRJnv1E+3QvKIGGIUDy+b7jJpQ6RROmM0dxxzXuvLYYpSLDK",
-	"cJ2s1uUTKbQoVzysR8cmwj2WzlYfQ4w/BfEk1433v9HoU7a7rppaN3P5Epq9JtJZYScdUCGoaWdwD45U",
-	"c8CMrQTLeQ3bZbPBZluWGGPdNmLBAUN/yRRsq7yjqvulSIitMWlQ4Uw1ZdsoQkHPKFhYGNCWKMZIPxCt",
-	"GKiBULYSg/FA1C4Io7zXdnKU8mQl+rmrfCTF2+wof50W+xDsnYK7K1zdkboDa2G0e/FWVLQJeGGrDMfd",
-	"2YPHhv4ptN8dtYNmqvul9mbqz+v/CkmwMQeTniDU2LUkWNFaNYnKbhJUmoNx4nmi39CK1L7EPZ+grXjN",
-	"Vc9+BQAA///GPPDMKQoAAA==",
+	"H4sIAAAAAAAC/9xVTW/jNhD9K8S0gC9E7G0XPei231igWyx2U6BAkAMljRwG4kfIUVoj8H8vhrRlWVJi",
+	"G0Uve6NE8r3HN4/DJ6ic8c6ipQjFEwSM3tmI6eNDCC7woHKW0BIPlfetrhRpZ5f30Vn+F6s7NIpHPwds",
+	"oICflgfUZZ6Ny4y23W4l1BiroD2DQAFvVS0CPnQYCXh2t+FIgQ/OYyCdhRmMUa2Rh7TxCAVECtqu03aG",
+	"0gFrKG76hbdyv9CV91gRbCV81C2+100zha8jnTrMd1KEjKLjW21V2Ay0lM61qCzPttpmyJewvim7Tlgx",
+	"VGfzRlLUxXOWd3Fiy25zZpTpvHutgxPNmfa7ts+YNsjIqCaJgDf+0ZkSUzkbF4wiKEBb+u019ETaEq4x",
+	"8B7neSHazrBixTIHig7YMVQXYo/McB5kr36MN9Y+50mu38QQtPXAjMHJIqlAc1PTKgVWxEBzvDkLE16v",
+	"6O70zUirnkPNwTqGjZULic2of7ThqrxarSQYbfPXaq6I+c+hjG9AwjuQ8B4kfAEJ30DCNUj4EyT8NVPe",
+	"keg0OxXNy7RtXDq1ppbnOKTizdfPIOERQ8yd5tXV6mqVw4VWeQ0F/Jp+yeRHOuey1k2zNCrFb42pUOxD",
+	"anmfayjgExKjf1E+7QvKIGGIUNw8jTrbRx0iicoZo7mQmv89dBg2IMEqwzo52IcjUuhQDvrpxI4xw3es",
+	"nK1fpigvoriVx4/AL6vVRU/AcWoa3eaBJjQn21XfkvvogApBbfpWeu1ItWdcncFiudMwH5uRm11VYYxN",
+	"14q9B0z9Olswp7y3qn/eJMTOmPQiwDvVVl2rCAXdoeBgYUBboSiR/ka0YqEWQtlaLMqFaFwQRnmv7foq",
+	"4eQk+l2zeCmKX3Oj+OGyOKXglii4usI1vanPcO3750m+QYrGhB9snem4Oif4uE9fxPZfr9pZd6p/sSd3",
+	"6v/P/yckwY2ZH2TtrFCl60hworVqk5X9TVDpHpTJ57V+RCtS+ZL3PIO25jGr3v4bAAD//+P1wom1CgAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

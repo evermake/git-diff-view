@@ -7,33 +7,34 @@ import (
 
 var _defaultAddr = ":7777"
 
-type Config struct {
+type Option func(*App)
+
+func WithAddr(addr string) Option {
+	return func(app *App) {
+		app.addr = addr
+	}
+}
+
+type App struct {
 	addr string
 }
 
-type Option func(config *Config)
-
-func WithAddr(addr string) Option {
-	return func(config *Config) {
-		config.addr = addr
-	}
-}
-
-func Run(options ...Option) error {
-	config := Config{
-		addr: _defaultAddr,
-	}
+func New(options ...Option) App {
+	app := App{addr: _defaultAddr}
 
 	for _, option := range options {
-		option(&config)
+		option(&app)
 	}
 
-	e := echo.New()
-	api := e.Group("/api")
+	return app
+}
 
-	if err := v1.RegisterHandlers(api); err != nil {
+func (a App) Run() error {
+	e := echo.New()
+
+	if err := v1.RegisterHandlers(e); err != nil {
 		return err
 	}
 
-	return e.Start(config.addr)
+	return e.Start(a.addr)
 }

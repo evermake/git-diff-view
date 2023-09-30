@@ -3,7 +3,6 @@ package v1
 import (
 	"context"
 	"os"
-	"sort"
 
 	"github.com/bluekeyes/go-gitdiff/gitdiff"
 	"github.com/evermake/git-diff-view/internal/controller/http/v1/openapi"
@@ -45,13 +44,12 @@ func (s *Server) getDiffs(ctx context.Context, commitA, commitB string) ([]*diff
 		entry := &diffCacheEntry{}
 		entry.Diff = d
 		entry.FileDiff = &openapi.FileDiff{
+			IsBinary: d.IsBinary,
 			Src: openapi.State{
-				Path:     d.Src.Path,
-				IsBinary: d.IsBinary,
+				Path: d.Src.Path,
 			},
 			Dst: openapi.State{
-				Path:     d.Dst.Path,
-				IsBinary: d.IsBinary,
+				Path: d.Dst.Path,
 			},
 			Status: openapi.Status{
 				Score: d.Status.Score,
@@ -79,7 +77,7 @@ func (s *Server) getDiffs(ctx context.Context, commitA, commitB string) ([]*diff
 }
 
 func (s *Server) GetDiffMap(ctx context.Context, request openapi.GetDiffMapRequestObject) (openapi.GetDiffMapResponseObject, error) {
-	diffs, err := s.getDiffs(ctx, request.Params.A, request.Params.A)
+	diffs, err := s.getDiffs(ctx, request.Params.A, request.Params.B)
 	if err != nil {
 		return nil, err
 	}
@@ -105,55 +103,49 @@ func (s *Server) GetDiffPart(ctx context.Context, request openapi.GetDiffPartReq
 
 	start, end := request.Params.Start, request.Params.End
 
-	startFile := sort.Search(len(diffs), func(i int) bool {
-		lines := diffs[i].FileDiff.Lines
-
-		return lines.Start <= start && start <= lines.End
-	})
-	if startFile == len(diffs) {
+	if start > end {
 		return openapi.GetDiffPart400JSONResponse{
 			ErrorJSONResponse: openapi.ErrorJSONResponse{
-				Error: "start is out of range",
+				Message: "start is greater than end",
 			},
 		}, nil
 	}
 
-	endFile := sort.Search(len(diffs), func(i int) bool {
-		lines := diffs[i].FileDiff.Lines
+	var lines []diff.Line
+	for _, d := range diffs {
+		lines = append(lines, d.Diff.Lines...)
+	}
 
-		return lines.Start <= end && end <= lines.End
-	})
-	if endFile == len(diffs) {
+	if start <= 0 || start >= len(lines) {
 		return openapi.GetDiffPart400JSONResponse{
 			ErrorJSONResponse: openapi.ErrorJSONResponse{
-				Error: "end is out of range",
+				Message: "start is out of bounds",
 			},
 		}, nil
 	}
 
-	diffs = diffs[startFile:endFile]
-
-	var lines []gitdiff.Line
-
-	if len(diffs) == 1 {
-		lines = diffs[0].Diff.Lines[start:end]
-	} else {
-		lines = append(lines, diffs[0].Diff.Lines[start:]...)
-		lines = append(lines, diffs[len(diffs)-1].Diff.Lines[:end]...)
+	if end <= 0 || end >= len(lines) {
+		return openapi.GetDiffPart400JSONResponse{
+			ErrorJSONResponse: openapi.ErrorJSONResponse{
+				Message: "end is out of bounds",
+			},
+		}, nil
 	}
 
-	linesDiff := lo.Map(lines, func(line gitdiff.Line, _ int) openapi.LineDiff {
+	linesDiff := lo.Map(lines[start:end], func(line diff.Line, _ int) openapi.LineDiff {
 		var op openapi.LineDiffOp
 		switch line.Op {
 		case gitdiff.OpAdd:
 			op = openapi.LineDiffOpA
 		case gitdiff.OpDelete:
-			op = openapi.LineDiffOpA
+			op = openapi.LineDiffOpD
 		}
 
 		return openapi.LineDiff{
-			Content: line.Line,
-			Op:      op,
+			Content:       line.Content,
+			SrcLineNumber: line.NumberInSrc,
+			DstLineNumber: line.NumberInDst,
+			Op:            op,
 		}
 	})
 

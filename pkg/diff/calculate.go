@@ -33,6 +33,10 @@ func Calculate(
 		return nil, err
 	}
 
+	if buffer.Len() == 0 {
+		return nil, nil
+	}
+
 	diffs := make(map[string]*Diff)
 
 	reader := bufio.NewReader(buffer)
@@ -60,16 +64,42 @@ func Calculate(
 			name = file.NewName
 		}
 
-		var lines []gitdiff.Line
+		var lines []Line
 		for _, fragment := range file.TextFragments {
-			lines = append(lines, fragment.Lines...)
+			var (
+				srcLineNumber = fragment.OldPosition
+				dstLineNumber = fragment.NewPosition
+			)
+
+			for _, fragmentLine := range fragment.Lines {
+				line := Line{
+					Op:      fragmentLine.Op,
+					Content: fragmentLine.Line,
+				}
+
+				switch fragmentLine.Op {
+				case gitdiff.OpAdd:
+					line.NumberInDst = dstLineNumber
+					dstLineNumber++
+				case gitdiff.OpDelete:
+					line.NumberInSrc = srcLineNumber
+					srcLineNumber++
+				default:
+					line.NumberInDst = dstLineNumber
+					line.NumberInSrc = srcLineNumber
+					dstLineNumber++
+					srcLineNumber++
+				}
+
+				lines = append(lines, line)
+			}
 		}
 
 		diff := diffs[name]
 		diff.Lines = lines
 		diff.IsBinary = file.IsBinary
 
-		diffs[name].Lines = lines
+		diffs[name] = diff
 	}
 
 	diffsSlice := make([]*Diff, 0, len(diffs))
