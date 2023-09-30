@@ -7,25 +7,13 @@ import (
 	"unicode/utf8"
 )
 
+type Status struct {
+	Type       StatusType
+	Percentage *int
+}
+
 type StatusType uint8
 
-/*
-A: addition of a file
-
-C: copy of a file into a new one
-
-D: deletion of a file
-
-M: modification of the contents or mode of a file
-
-R: renaming of a file
-
-T: change in the type of the file (regular file, symbolic link or submodule)
-
-U: file is unmerged (you must complete the merge before it can be committed)
-
-X: "unknown" change type (most probably a bug, please report it)
-*/
 const (
 	StatusUnknown StatusType = iota
 	StatusAdd
