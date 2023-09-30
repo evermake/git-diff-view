@@ -3,6 +3,42 @@ info:
   title: Diff API
   version: 1.0.0
 paths:
+  /file:
+    get:
+      summary: Get file contents
+      parameters:
+        - name: revision
+          in: query
+          description: Revision of the file
+          schema:
+            type: string
+            default: HEAD
+        - name: path
+          in: query
+          description: Path to the file
+          required: true
+          schema:
+            type: string
+        - name: start
+          in: query
+          description: Start line number
+          schema:
+            type: integer
+            default: 0
+        - name: end
+          in: query
+          description: End line number. Defaults to the last line of the file
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/Error'
   /diff/map:
     get:
       summary: Calculate the difference between 'a' and 'b' for mapping.

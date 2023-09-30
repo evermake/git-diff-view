@@ -107,6 +107,21 @@ type GetDiffPartParams struct {
 	End int `form:"end" json:"end"`
 }
 
+// GetFileParams defines parameters for GetFile.
+type GetFileParams struct {
+	// Revision Revision of the file
+	Revision *string `form:"revision,omitempty" json:"revision,omitempty"`
+
+	// Path Path to the file
+	Path string `form:"path" json:"path"`
+
+	// Start Start line number
+	Start *int `form:"start,omitempty" json:"start,omitempty"`
+
+	// End End line number. Defaults to the last line of the file
+	End *int `form:"end,omitempty" json:"end,omitempty"`
+}
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Calculate the difference between 'a' and 'b' for mapping.
@@ -115,6 +130,9 @@ type ServerInterface interface {
 	// Get information about partial diff between a and b for given startline and endline
 	// (GET /diff/part)
 	GetDiffPart(ctx echo.Context, params GetDiffPartParams) error
+	// Get file contents
+	// (GET /file)
+	GetFile(ctx echo.Context, params GetFileParams) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -186,6 +204,45 @@ func (w *ServerInterfaceWrapper) GetDiffPart(ctx echo.Context) error {
 	return err
 }
 
+// GetFile converts echo context to params.
+func (w *ServerInterfaceWrapper) GetFile(ctx echo.Context) error {
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetFileParams
+	// ------------- Optional query parameter "revision" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "revision", ctx.QueryParams(), &params.Revision)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter revision: %s", err))
+	}
+
+	// ------------- Required query parameter "path" -------------
+
+	err = runtime.BindQueryParameter("form", true, true, "path", ctx.QueryParams(), &params.Path)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter path: %s", err))
+	}
+
+	// ------------- Optional query parameter "start" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "start", ctx.QueryParams(), &params.Start)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter start: %s", err))
+	}
+
+	// ------------- Optional query parameter "end" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "end", ctx.QueryParams(), &params.End)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter end: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetFile(ctx, params)
+	return err
+}
+
 // This is a simple interface which specifies echo.Route addition functions which
 // are present on both echo.Echo and echo.Group, since we want to allow using
 // either of them for path registration
@@ -216,6 +273,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 
 	router.GET(baseURL+"/diff/map", wrapper.GetDiffMap)
 	router.GET(baseURL+"/diff/part", wrapper.GetDiffPart)
+	router.GET(baseURL+"/file", wrapper.GetFile)
 
 }
 
@@ -276,6 +334,32 @@ func (response GetDiffPart400JSONResponse) VisitGetDiffPartResponse(w http.Respo
 	return json.NewEncoder(w).Encode(response)
 }
 
+type GetFileRequestObject struct {
+	Params GetFileParams
+}
+
+type GetFileResponseObject interface {
+	VisitGetFileResponse(w http.ResponseWriter) error
+}
+
+type GetFile200JSONResponse string
+
+func (response GetFile200JSONResponse) VisitGetFileResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetFile400JSONResponse struct{ ErrorJSONResponse }
+
+func (response GetFile400JSONResponse) VisitGetFileResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// Calculate the difference between 'a' and 'b' for mapping.
@@ -284,6 +368,9 @@ type StrictServerInterface interface {
 	// Get information about partial diff between a and b for given startline and endline
 	// (GET /diff/part)
 	GetDiffPart(ctx context.Context, request GetDiffPartRequestObject) (GetDiffPartResponseObject, error)
+	// Get file contents
+	// (GET /file)
+	GetFile(ctx context.Context, request GetFileRequestObject) (GetFileResponseObject, error)
 }
 
 type StrictHandlerFunc = runtime.StrictEchoHandlerFunc
@@ -348,22 +435,49 @@ func (sh *strictHandler) GetDiffPart(ctx echo.Context, params GetDiffPartParams)
 	return nil
 }
 
+// GetFile operation middleware
+func (sh *strictHandler) GetFile(ctx echo.Context, params GetFileParams) error {
+	var request GetFileRequestObject
+
+	request.Params = params
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetFile(ctx.Request().Context(), request.(GetFileRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetFile")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetFileResponseObject); ok {
+		return validResponse.VisitGetFileResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

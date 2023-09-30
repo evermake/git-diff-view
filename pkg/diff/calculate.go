@@ -4,11 +4,13 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"fmt"
 	"os/exec"
 	"slices"
 	"strings"
 
 	"github.com/bluekeyes/go-gitdiff/gitdiff"
+	"github.com/evermake/git-diff-view/pkg/gitutil"
 )
 
 func Calculate(
@@ -16,6 +18,22 @@ func Calculate(
 	repoPath string,
 	commitA, commitB string,
 ) ([]*Diff, error) {
+	exists, err := gitutil.RevisionExists(ctx, commitA)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, fmt.Errorf("revision %s does not exists", commitA)
+	}
+
+	exists, err = gitutil.RevisionExists(ctx, commitB)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, fmt.Errorf("revision %s does not exists", commitA)
+	}
+
 	cmd := exec.CommandContext(
 		ctx,
 		"git",
@@ -26,20 +44,21 @@ func Calculate(
 	)
 
 	cmd.Dir = repoPath
-	buffer := new(bytes.Buffer)
-	cmd.Stdout = buffer
+
+	stdout := new(bytes.Buffer)
+	cmd.Stdout = stdout
 
 	if err := cmd.Run(); err != nil {
 		return nil, err
 	}
 
-	if buffer.Len() == 0 {
+	if stdout.Len() == 0 {
 		return nil, nil
 	}
 
 	diffs := make(map[string]*Diff)
 
-	reader := bufio.NewReader(buffer)
+	reader := bufio.NewReader(stdout)
 
 	files, preamble, err := gitdiff.Parse(reader)
 	if err != nil {
