@@ -19,10 +19,10 @@ var _ openapi.StrictServerInterface = (*Server)(nil)
 func NewServer() *Server {
 	return &Server{
 		diffCache: ttlcache.New[string, []*combinedDiff](
-			ttlcache.WithCapacity[string, []*combinedDiff](1e7), // 10 megabytes
+			ttlcache.WithCapacity[string, []*combinedDiff](10),
 		),
 		fileCache: ttlcache.New[string, []string](
-			ttlcache.WithCapacity[string, []string](1e7), // 10 megabytes
+			ttlcache.WithCapacity[string, []string](10),
 		),
 	}
 }
@@ -123,10 +123,7 @@ func (s *Server) GetFile(ctx context.Context, request openapi.GetFileRequestObje
 			end = len(lines)
 		}
 
-		return openapi.GetFile200JSONResponse(strings.Join(
-			lines[start:end],
-			"\n",
-		)), nil
+		return openapi.GetFile200JSONResponse(lines[start:end]), nil
 	}
 
 	contents, err := gitutil.ReadFile(ctx, revision, request.Params.Path)
