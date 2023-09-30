@@ -1,5 +1,8 @@
 #!/usr/bin/env just --justfile
 
+run:
+    go run ./cmd/app
+
 build:
     go build -o app ./cmd/app
 

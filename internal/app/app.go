@@ -29,8 +29,9 @@ func Run(options ...Option) error {
 	}
 
 	e := echo.New()
+	api := e.Group("/api")
 
-	if err := v1.RegisterHandlers(e); err != nil {
+	if err := v1.RegisterHandlers(api); err != nil {
 		return err
 	}
 

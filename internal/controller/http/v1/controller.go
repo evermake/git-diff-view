@@ -9,7 +9,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func RegisterHandlers(e *echo.Echo) error {
+func RegisterHandlers(e *echo.Group) error {
 	swagger, err := openapi.GetSwagger()
 	if err != nil {
 		return err
@@ -17,8 +17,7 @@ func RegisterHandlers(e *echo.Echo) error {
 	swagger.Servers = nil
 
 	{
-		api := e.Group("/api")
-		api.Use(middleware.OapiRequestValidatorWithOptions(swagger, &middleware.Options{
+		v1 := e.Group("/v1", middleware.OapiRequestValidatorWithOptions(swagger, &middleware.Options{
 			ErrorHandler: func(e echo.Context, err *echo.HTTPError) error {
 				var msg string
 				if err.Code == http.StatusInternalServerError {
@@ -34,7 +33,8 @@ func RegisterHandlers(e *echo.Echo) error {
 				})
 			},
 		}))
-		openapi.RegisterHandlers(api, openapi.NewStrictHandler(
+
+		openapi.RegisterHandlers(v1, openapi.NewStrictHandler(
 			NewServer(),
 			nil,
 		))

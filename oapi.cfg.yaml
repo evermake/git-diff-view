@@ -4,4 +4,4 @@ generate:
   strict-server: true
   embedded-spec: true
   models: true
-output: controller/http/openapi/openapi.go
+output: internal/controller/http/v1/openapi/openapi.go
