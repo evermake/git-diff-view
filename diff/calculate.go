@@ -3,6 +3,7 @@ package diff
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os/exec"
 )
 
@@ -27,12 +28,15 @@ func Calculate(
 		return nil, err
 	}
 
+	stdout = bytes.TrimSpace(stdout)
 	lines := bytes.Split(stdout, []byte("\n"))
 	diffs := make([]Diff, len(lines))
 
 	for i, line := range lines {
 		diff, err := parseDiff(line)
 		if err != nil {
+			a := string(line)
+			fmt.Println(a)
 			return nil, err
 		}
 
@@ -50,7 +54,7 @@ func parseDiff(raw []byte) (diff Diff, err error) {
 
 	fields := bytes.Fields(raw)
 
-	if len(fields) != 5 || len(fields) != 6 {
+	if len(fields) < 5 || len(fields) > 6 {
 		err = ErrMalformedDiff
 		return
 	}

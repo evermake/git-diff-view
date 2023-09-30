@@ -69,7 +69,7 @@ func parseStatus(raw []byte) (status Status, err error) {
 	case StatusCopy, StatusRename:
 		percentage, err := parseStatusPercentage(fields[1])
 		if err != nil {
-			return
+			return Status{}, err
 		}
 
 		status.Percentage = &percentage
@@ -77,7 +77,7 @@ func parseStatus(raw []byte) (status Status, err error) {
 		if len(fields) == 2 {
 			percentage, err := parseStatusPercentage(fields[1])
 			if err != nil {
-				return
+				return Status{}, err
 			}
 
 			status.Percentage = &percentage
