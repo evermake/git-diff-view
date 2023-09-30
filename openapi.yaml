@@ -1,0 +1,94 @@
+openapi: 3.0.0
+info:
+  title: Diff API
+  version: 1.0.0
+paths:
+  /diff/map:
+    get:
+      summary: Calculate the difference between 'a' and 'b' for mapping.
+      parameters:
+        - name: a
+          in: query
+          description: First commit
+          schema:
+            type: string
+        - name: b
+          in: query
+          description: Second commit
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content: 
+            application/json:
+              schema:
+                type: object
+                properties:
+                  lines_total:
+                    type: integer
+                  files:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        path:
+                          type: string
+                        is_binary:
+                          type: boolean
+                        start_line:
+                          type: integer
+                        end_line:
+                          type: integer
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error_message:
+                    type: string
+  /diff/part:
+    get:
+      summary: "Get information about partial diff between a and b for given startline and endline"
+      parameters:
+        - name: a
+          in: query
+          description: First commit
+          schema:
+            type: string
+        - name: b
+          in: query
+          description: Second commit
+          schema:
+            type: string
+        - name: start
+          in: query
+          description: Start line of the diff
+          schema:
+            type: integer
+        - name: end
+          in: query
+          description: Endline for the diff
+          schema:
+            type: integer 
+      responses:
+          '200':
+            description: Successful response
+            content: 
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    type: string
+                    description: "Strings with content in the following format \"[type of diff line](one symbol: \"a\" — added, \"d\" — deleted, \"c\" — common) + file_content\""
+          '400':
+            description: Bad Request
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    error_message:
+                      type: string
