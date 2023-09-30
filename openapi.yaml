@@ -106,16 +106,38 @@ components:
     FileDiff:
       type: object
       required:
+        - status
+        - src
+        - dst
+        - lines
+      properties:
+        status:
+          type: string
+          enum:
+            - A
+            - C
+            - D
+            - M
+            - R
+            - T
+            - U
+            - X
+        src:
+          $ref: '#/components/schemas/State'
+        dst:
+          $ref: '#/components/schemas/State'
+        lines:
+          $ref: '#/components/schemas/Range'
+    State:
+      type: object
+      required:
         - path
         - isBinary
-        - lines
       properties:
         path:
           type: string
         isBinary:
           type: boolean
-        lines:
-          $ref: '#/components/schemas/Range'
   responses:
     Error:
       description: Bad request
