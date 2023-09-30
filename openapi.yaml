@@ -25,14 +25,14 @@ paths:
               schema:
                 type: object
                 properties:
-                  lines_length:
+                  lines_total:
                     type: integer
-                  diff_info:
+                  files:
                     type: array
                     items:
                       type: object
                       properties:
-                        file_name:
+                        path:
                           type: string
                         is_binary:
                           type: boolean
