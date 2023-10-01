@@ -29,5 +29,5 @@ Usage of git-diff-server:
   -port string
     	port to listen on (default "7777")
   -repo string
-    	path to the git repository (default "/Users/x/git-diff-view")
+    	path to the git repository (default is the current directory)
 ```
