@@ -1,13 +1,71 @@
 package gitutil
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os/exec"
 )
 
-func ReadFile(ctx context.Context, revision, path string) ([]byte, error) {
-	exists, err := RevisionExists(ctx, revision)
+func Branches(ctx context.Context, repo string) ([]Branch, error) {
+	cmd := exec.CommandContext(
+		ctx,
+		"git",
+		"branch",
+		"--format",
+		"%(refname:short)",
+	)
+	cmd.Dir = repo
+
+	stdout, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+
+	names := bytes.Fields(stdout)
+
+	branches := make([]Branch, len(names))
+	for i, name := range names {
+		branches[i] = Branch{Name: string(name)}
+	}
+
+	return branches, nil
+}
+
+func BranchCommits(ctx context.Context, repo string, branch string) ([]CommitPreview, error) {
+	cmd := exec.CommandContext(
+		ctx,
+		"git",
+		"log",
+		"--format=oneline",
+		branch,
+	)
+
+	cmd.Dir = repo
+
+	stdout, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+
+	stdout = bytes.TrimSpace(stdout)
+	lines := bytes.Split(stdout, []byte("\n"))
+
+	commits := make([]CommitPreview, len(lines))
+	for i, line := range lines {
+		fields := bytes.Fields(line)
+
+		commits[i] = CommitPreview{
+			SHA1:    fields[0],
+			Message: string(bytes.Join(fields[1:], []byte(" "))),
+		}
+	}
+
+	return commits, nil
+}
+
+func ReadFile(ctx context.Context, repo string, revision, path string) ([]byte, error) {
+	exists, err := RevisionExists(ctx, repo, revision)
 	if err != nil {
 		return nil, err
 	}
@@ -23,10 +81,12 @@ func ReadFile(ctx context.Context, revision, path string) ([]byte, error) {
 		fmt.Sprintf("%s:%s", revision, path),
 	)
 
+	cmd.Dir = repo
+
 	return cmd.Output()
 }
 
-func RevisionExists(ctx context.Context, revision string) (bool, error) {
+func RevisionExists(ctx context.Context, repo string, revision string) (bool, error) {
 	cmd := exec.CommandContext(
 		ctx,
 		"git",
@@ -34,6 +94,7 @@ func RevisionExists(ctx context.Context, revision string) (bool, error) {
 		"-e",
 		fmt.Sprintf("%s^{commit}", revision),
 	)
+	cmd.Dir = repo
 
 	err := cmd.Run()
 

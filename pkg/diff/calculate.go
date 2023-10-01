@@ -17,7 +17,7 @@ func Calculate(
 	repoPath string,
 	commitA, commitB string,
 ) ([]*Diff, error) {
-	exists, err := gitutil.RevisionExists(ctx, commitA)
+	exists, err := gitutil.RevisionExists(ctx, repoPath, commitA)
 	if err != nil {
 		return nil, err
 	}
@@ -25,7 +25,7 @@ func Calculate(
 		return nil, fmt.Errorf("revision %s does not exists", commitA)
 	}
 
-	exists, err = gitutil.RevisionExists(ctx, commitB)
+	exists, err = gitutil.RevisionExists(ctx, repoPath, commitB)
 	if err != nil {
 		return nil, err
 	}
@@ -108,8 +108,8 @@ func Calculate(
 					srcLineNumber++
 				default:
 					// as per request from Vlad =)
-					//line.Dst.Number = dstLineNumber
 					//line.Dst.Content = fragmentLine.Line
+					line.Dst.Number = dstLineNumber
 
 					line.Src.Number = srcLineNumber
 					line.Src.Content = fragmentLine.Line

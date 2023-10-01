@@ -39,6 +39,17 @@ const (
 	StatusTypeX StatusType = "X"
 )
 
+// BranchPreview defines model for BranchPreview.
+type BranchPreview struct {
+	Name string `json:"name"`
+}
+
+// CommitPreview defines model for CommitPreview.
+type CommitPreview struct {
+	Message string `json:"message"`
+	Sha1    string `json:"sha1"`
+}
+
 // Error defines model for Error.
 type Error struct {
 	Message string `json:"message"`
@@ -89,8 +100,8 @@ type Status struct {
 // StatusType defines model for Status.Type.
 type StatusType string
 
-// GetDiffMapParams defines parameters for GetDiffMap.
-type GetDiffMapParams struct {
+// GetRepoDiffMapParams defines parameters for GetRepoDiffMap.
+type GetRepoDiffMapParams struct {
 	// A First commit
 	A string `form:"a" json:"a"`
 
@@ -98,8 +109,8 @@ type GetDiffMapParams struct {
 	B string `form:"b" json:"b"`
 }
 
-// GetDiffPartParams defines parameters for GetDiffPart.
-type GetDiffPartParams struct {
+// GetRepoDiffPartParams defines parameters for GetRepoDiffPart.
+type GetRepoDiffPartParams struct {
 	// A First commit
 	A string `form:"a" json:"a"`
 
@@ -113,8 +124,8 @@ type GetDiffPartParams struct {
 	End int `form:"end" json:"end"`
 }
 
-// GetFileParams defines parameters for GetFile.
-type GetFileParams struct {
+// GetRepoFileParams defines parameters for GetRepoFile.
+type GetRepoFileParams struct {
 	// Revision Revision of the file
 	Revision *string `form:"revision,omitempty" json:"revision,omitempty"`
 
@@ -130,15 +141,21 @@ type GetFileParams struct {
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// Get repo branches
+	// (GET /repo/branches)
+	GetRepoBranches(ctx echo.Context) error
+	// Get branch commits
+	// (GET /repo/branches/{branch}/commits)
+	GetRepoBranchesBranchCommits(ctx echo.Context, branch string) error
 	// Calculate the difference between 'a' and 'b' for mapping.
-	// (GET /diff/map)
-	GetDiffMap(ctx echo.Context, params GetDiffMapParams) error
+	// (GET /repo/diff/map)
+	GetRepoDiffMap(ctx echo.Context, params GetRepoDiffMapParams) error
 	// Get information about partial diff between a and b for given startline and endline
-	// (GET /diff/part)
-	GetDiffPart(ctx echo.Context, params GetDiffPartParams) error
+	// (GET /repo/diff/part)
+	GetRepoDiffPart(ctx echo.Context, params GetRepoDiffPartParams) error
 	// Get file contents
-	// (GET /file)
-	GetFile(ctx echo.Context, params GetFileParams) error
+	// (GET /repo/file)
+	GetRepoFile(ctx echo.Context, params GetRepoFileParams) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -146,12 +163,37 @@ type ServerInterfaceWrapper struct {
 	Handler ServerInterface
 }
 
-// GetDiffMap converts echo context to params.
-func (w *ServerInterfaceWrapper) GetDiffMap(ctx echo.Context) error {
+// GetRepoBranches converts echo context to params.
+func (w *ServerInterfaceWrapper) GetRepoBranches(ctx echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetRepoBranches(ctx)
+	return err
+}
+
+// GetRepoBranchesBranchCommits converts echo context to params.
+func (w *ServerInterfaceWrapper) GetRepoBranchesBranchCommits(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "branch" -------------
+	var branch string
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "branch", runtime.ParamLocationPath, ctx.Param("branch"), &branch)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter branch: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetRepoBranchesBranchCommits(ctx, branch)
+	return err
+}
+
+// GetRepoDiffMap converts echo context to params.
+func (w *ServerInterfaceWrapper) GetRepoDiffMap(ctx echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
-	var params GetDiffMapParams
+	var params GetRepoDiffMapParams
 	// ------------- Required query parameter "a" -------------
 
 	err = runtime.BindQueryParameter("form", true, true, "a", ctx.QueryParams(), &params.A)
@@ -167,16 +209,16 @@ func (w *ServerInterfaceWrapper) GetDiffMap(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.GetDiffMap(ctx, params)
+	err = w.Handler.GetRepoDiffMap(ctx, params)
 	return err
 }
 
-// GetDiffPart converts echo context to params.
-func (w *ServerInterfaceWrapper) GetDiffPart(ctx echo.Context) error {
+// GetRepoDiffPart converts echo context to params.
+func (w *ServerInterfaceWrapper) GetRepoDiffPart(ctx echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
-	var params GetDiffPartParams
+	var params GetRepoDiffPartParams
 	// ------------- Required query parameter "a" -------------
 
 	err = runtime.BindQueryParameter("form", true, true, "a", ctx.QueryParams(), &params.A)
@@ -206,16 +248,16 @@ func (w *ServerInterfaceWrapper) GetDiffPart(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.GetDiffPart(ctx, params)
+	err = w.Handler.GetRepoDiffPart(ctx, params)
 	return err
 }
 
-// GetFile converts echo context to params.
-func (w *ServerInterfaceWrapper) GetFile(ctx echo.Context) error {
+// GetRepoFile converts echo context to params.
+func (w *ServerInterfaceWrapper) GetRepoFile(ctx echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
-	var params GetFileParams
+	var params GetRepoFileParams
 	// ------------- Optional query parameter "revision" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "revision", ctx.QueryParams(), &params.Revision)
@@ -245,7 +287,7 @@ func (w *ServerInterfaceWrapper) GetFile(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.GetFile(ctx, params)
+	err = w.Handler.GetRepoFile(ctx, params)
 	return err
 }
 
@@ -277,89 +319,133 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 		Handler: si,
 	}
 
-	router.GET(baseURL+"/diff/map", wrapper.GetDiffMap)
-	router.GET(baseURL+"/diff/part", wrapper.GetDiffPart)
-	router.GET(baseURL+"/file", wrapper.GetFile)
+	router.GET(baseURL+"/repo/branches", wrapper.GetRepoBranches)
+	router.GET(baseURL+"/repo/branches/:branch/commits", wrapper.GetRepoBranchesBranchCommits)
+	router.GET(baseURL+"/repo/diff/map", wrapper.GetRepoDiffMap)
+	router.GET(baseURL+"/repo/diff/part", wrapper.GetRepoDiffPart)
+	router.GET(baseURL+"/repo/file", wrapper.GetRepoFile)
 
 }
 
 type ErrorJSONResponse Error
 
-type GetDiffMapRequestObject struct {
-	Params GetDiffMapParams
+type GetRepoBranchesRequestObject struct {
 }
 
-type GetDiffMapResponseObject interface {
-	VisitGetDiffMapResponse(w http.ResponseWriter) error
+type GetRepoBranchesResponseObject interface {
+	VisitGetRepoBranchesResponse(w http.ResponseWriter) error
 }
 
-type GetDiffMap200JSONResponse struct {
+type GetRepoBranches200JSONResponse []BranchPreview
+
+func (response GetRepoBranches200JSONResponse) VisitGetRepoBranchesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetRepoBranches400JSONResponse struct{ ErrorJSONResponse }
+
+func (response GetRepoBranches400JSONResponse) VisitGetRepoBranchesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetRepoBranchesBranchCommitsRequestObject struct {
+	Branch string `json:"branch"`
+}
+
+type GetRepoBranchesBranchCommitsResponseObject interface {
+	VisitGetRepoBranchesBranchCommitsResponse(w http.ResponseWriter) error
+}
+
+type GetRepoBranchesBranchCommits200JSONResponse []CommitPreview
+
+func (response GetRepoBranchesBranchCommits200JSONResponse) VisitGetRepoBranchesBranchCommitsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetRepoDiffMapRequestObject struct {
+	Params GetRepoDiffMapParams
+}
+
+type GetRepoDiffMapResponseObject interface {
+	VisitGetRepoDiffMapResponse(w http.ResponseWriter) error
+}
+
+type GetRepoDiffMap200JSONResponse struct {
 	Files      []FileDiff `json:"files"`
 	LinesTotal int        `json:"linesTotal"`
 }
 
-func (response GetDiffMap200JSONResponse) VisitGetDiffMapResponse(w http.ResponseWriter) error {
+func (response GetRepoDiffMap200JSONResponse) VisitGetRepoDiffMapResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetDiffMap400JSONResponse struct{ ErrorJSONResponse }
+type GetRepoDiffMap400JSONResponse struct{ ErrorJSONResponse }
 
-func (response GetDiffMap400JSONResponse) VisitGetDiffMapResponse(w http.ResponseWriter) error {
+func (response GetRepoDiffMap400JSONResponse) VisitGetRepoDiffMapResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(400)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetDiffPartRequestObject struct {
-	Params GetDiffPartParams
+type GetRepoDiffPartRequestObject struct {
+	Params GetRepoDiffPartParams
 }
 
-type GetDiffPartResponseObject interface {
-	VisitGetDiffPartResponse(w http.ResponseWriter) error
+type GetRepoDiffPartResponseObject interface {
+	VisitGetRepoDiffPartResponse(w http.ResponseWriter) error
 }
 
-type GetDiffPart200JSONResponse []LineDiff
+type GetRepoDiffPart200JSONResponse []LineDiff
 
-func (response GetDiffPart200JSONResponse) VisitGetDiffPartResponse(w http.ResponseWriter) error {
+func (response GetRepoDiffPart200JSONResponse) VisitGetRepoDiffPartResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetDiffPart400JSONResponse struct{ ErrorJSONResponse }
+type GetRepoDiffPart400JSONResponse struct{ ErrorJSONResponse }
 
-func (response GetDiffPart400JSONResponse) VisitGetDiffPartResponse(w http.ResponseWriter) error {
+func (response GetRepoDiffPart400JSONResponse) VisitGetRepoDiffPartResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(400)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetFileRequestObject struct {
-	Params GetFileParams
+type GetRepoFileRequestObject struct {
+	Params GetRepoFileParams
 }
 
-type GetFileResponseObject interface {
-	VisitGetFileResponse(w http.ResponseWriter) error
+type GetRepoFileResponseObject interface {
+	VisitGetRepoFileResponse(w http.ResponseWriter) error
 }
 
-type GetFile200JSONResponse []string
+type GetRepoFile200JSONResponse []string
 
-func (response GetFile200JSONResponse) VisitGetFileResponse(w http.ResponseWriter) error {
+func (response GetRepoFile200JSONResponse) VisitGetRepoFileResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetFile400JSONResponse struct{ ErrorJSONResponse }
+type GetRepoFile400JSONResponse struct{ ErrorJSONResponse }
 
-func (response GetFile400JSONResponse) VisitGetFileResponse(w http.ResponseWriter) error {
+func (response GetRepoFile400JSONResponse) VisitGetRepoFileResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(400)
 
@@ -368,15 +454,21 @@ func (response GetFile400JSONResponse) VisitGetFileResponse(w http.ResponseWrite
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// Get repo branches
+	// (GET /repo/branches)
+	GetRepoBranches(ctx context.Context, request GetRepoBranchesRequestObject) (GetRepoBranchesResponseObject, error)
+	// Get branch commits
+	// (GET /repo/branches/{branch}/commits)
+	GetRepoBranchesBranchCommits(ctx context.Context, request GetRepoBranchesBranchCommitsRequestObject) (GetRepoBranchesBranchCommitsResponseObject, error)
 	// Calculate the difference between 'a' and 'b' for mapping.
-	// (GET /diff/map)
-	GetDiffMap(ctx context.Context, request GetDiffMapRequestObject) (GetDiffMapResponseObject, error)
+	// (GET /repo/diff/map)
+	GetRepoDiffMap(ctx context.Context, request GetRepoDiffMapRequestObject) (GetRepoDiffMapResponseObject, error)
 	// Get information about partial diff between a and b for given startline and endline
-	// (GET /diff/part)
-	GetDiffPart(ctx context.Context, request GetDiffPartRequestObject) (GetDiffPartResponseObject, error)
+	// (GET /repo/diff/part)
+	GetRepoDiffPart(ctx context.Context, request GetRepoDiffPartRequestObject) (GetRepoDiffPartResponseObject, error)
 	// Get file contents
-	// (GET /file)
-	GetFile(ctx context.Context, request GetFileRequestObject) (GetFileResponseObject, error)
+	// (GET /repo/file)
+	GetRepoFile(ctx context.Context, request GetRepoFileRequestObject) (GetRepoFileResponseObject, error)
 }
 
 type StrictHandlerFunc = runtime.StrictEchoHandlerFunc
@@ -391,75 +483,123 @@ type strictHandler struct {
 	middlewares []StrictMiddlewareFunc
 }
 
-// GetDiffMap operation middleware
-func (sh *strictHandler) GetDiffMap(ctx echo.Context, params GetDiffMapParams) error {
-	var request GetDiffMapRequestObject
-
-	request.Params = params
+// GetRepoBranches operation middleware
+func (sh *strictHandler) GetRepoBranches(ctx echo.Context) error {
+	var request GetRepoBranchesRequestObject
 
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.GetDiffMap(ctx.Request().Context(), request.(GetDiffMapRequestObject))
+		return sh.ssi.GetRepoBranches(ctx.Request().Context(), request.(GetRepoBranchesRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetDiffMap")
+		handler = middleware(handler, "GetRepoBranches")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return err
-	} else if validResponse, ok := response.(GetDiffMapResponseObject); ok {
-		return validResponse.VisitGetDiffMapResponse(ctx.Response())
+	} else if validResponse, ok := response.(GetRepoBranchesResponseObject); ok {
+		return validResponse.VisitGetRepoBranchesResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("Unexpected response type: %T", response)
 	}
 	return nil
 }
 
-// GetDiffPart operation middleware
-func (sh *strictHandler) GetDiffPart(ctx echo.Context, params GetDiffPartParams) error {
-	var request GetDiffPartRequestObject
+// GetRepoBranchesBranchCommits operation middleware
+func (sh *strictHandler) GetRepoBranchesBranchCommits(ctx echo.Context, branch string) error {
+	var request GetRepoBranchesBranchCommitsRequestObject
 
-	request.Params = params
+	request.Branch = branch
 
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.GetDiffPart(ctx.Request().Context(), request.(GetDiffPartRequestObject))
+		return sh.ssi.GetRepoBranchesBranchCommits(ctx.Request().Context(), request.(GetRepoBranchesBranchCommitsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetDiffPart")
+		handler = middleware(handler, "GetRepoBranchesBranchCommits")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return err
-	} else if validResponse, ok := response.(GetDiffPartResponseObject); ok {
-		return validResponse.VisitGetDiffPartResponse(ctx.Response())
+	} else if validResponse, ok := response.(GetRepoBranchesBranchCommitsResponseObject); ok {
+		return validResponse.VisitGetRepoBranchesBranchCommitsResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("Unexpected response type: %T", response)
 	}
 	return nil
 }
 
-// GetFile operation middleware
-func (sh *strictHandler) GetFile(ctx echo.Context, params GetFileParams) error {
-	var request GetFileRequestObject
+// GetRepoDiffMap operation middleware
+func (sh *strictHandler) GetRepoDiffMap(ctx echo.Context, params GetRepoDiffMapParams) error {
+	var request GetRepoDiffMapRequestObject
 
 	request.Params = params
 
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.GetFile(ctx.Request().Context(), request.(GetFileRequestObject))
+		return sh.ssi.GetRepoDiffMap(ctx.Request().Context(), request.(GetRepoDiffMapRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetFile")
+		handler = middleware(handler, "GetRepoDiffMap")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return err
-	} else if validResponse, ok := response.(GetFileResponseObject); ok {
-		return validResponse.VisitGetFileResponse(ctx.Response())
+	} else if validResponse, ok := response.(GetRepoDiffMapResponseObject); ok {
+		return validResponse.VisitGetRepoDiffMapResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetRepoDiffPart operation middleware
+func (sh *strictHandler) GetRepoDiffPart(ctx echo.Context, params GetRepoDiffPartParams) error {
+	var request GetRepoDiffPartRequestObject
+
+	request.Params = params
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetRepoDiffPart(ctx.Request().Context(), request.(GetRepoDiffPartRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetRepoDiffPart")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetRepoDiffPartResponseObject); ok {
+		return validResponse.VisitGetRepoDiffPartResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetRepoFile operation middleware
+func (sh *strictHandler) GetRepoFile(ctx echo.Context, params GetRepoFileParams) error {
+	var request GetRepoFileRequestObject
+
+	request.Params = params
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetRepoFile(ctx.Request().Context(), request.(GetRepoFileRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetRepoFile")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetRepoFileResponseObject); ok {
+		return validResponse.VisitGetRepoFileResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("Unexpected response type: %T", response)
 	}
@@ -469,22 +609,25 @@ func (sh *strictHandler) GetFile(ctx echo.Context, params GetFileParams) error {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"/7gTuJ10EgAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

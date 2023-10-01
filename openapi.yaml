@@ -3,7 +3,40 @@ info:
   title: Diff API
   version: 1.0.0
 paths:
-  /file:
+  /repo/branches:
+    get:
+      summary: Get repo branches
+      responses:
+        '200':
+          description: Branches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BranchPreview'
+        '400':
+          $ref: '#/components/responses/Error'
+  /repo/branches/{branch}/commits:
+    get:
+      summary: Get branch commits
+      parameters:
+        - in: path
+          name: branch
+          schema:
+            type: string
+          required: true
+          description: Branch name
+      responses:
+        '200':
+          description: Branch commits
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CommitPreview'
+  /repo/file:
     get:
       summary: Get file contents
       parameters:
@@ -47,7 +80,7 @@ paths:
                   type: string
         '400':
           $ref: '#/components/responses/Error'
-  /diff/map:
+  /repo/diff/map:
     get:
       summary: Calculate the difference between 'a' and 'b' for mapping.
       parameters:
@@ -82,7 +115,7 @@ paths:
                       $ref: '#/components/schemas/FileDiff'
         '400':
           $ref: '#/components/responses/Error'
-  /diff/part:
+  /repo/diff/part:
     get:
       summary: "Get information about partial diff between a and b for given startline and endline"
       parameters:
@@ -180,6 +213,24 @@ components:
           type: boolean
         lines:
           $ref: '#/components/schemas/Range'
+    BranchPreview:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+    CommitPreview:
+      type: object
+      required:
+        - sha1
+        - message
+      properties:
+        sha1:
+          type: string
+          format: sha1
+        message:
+          type: string
     Status:
       type: object
       required:

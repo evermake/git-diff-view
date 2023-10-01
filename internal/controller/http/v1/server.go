@@ -81,7 +81,40 @@ func (s *Server) getDiffs(ctx context.Context, commitA, commitB string) ([]*comb
 	return entries, nil
 }
 
-func (s *Server) GetFile(ctx context.Context, request openapi.GetFileRequestObject) (openapi.GetFileResponseObject, error) {
+func (s *Server) GetRepoBranches(ctx context.Context, request openapi.GetRepoBranchesRequestObject) (openapi.GetRepoBranchesResponseObject, error) {
+	branches, err := gitutil.Branches(ctx, s.repoPath)
+	if err != nil {
+		return nil, err
+	}
+
+	previews := make([]openapi.BranchPreview, len(branches))
+	for i, branch := range branches {
+		previews[i] = openapi.BranchPreview{
+			Name: branch.Name,
+		}
+	}
+
+	return openapi.GetRepoBranches200JSONResponse(previews), nil
+}
+
+func (s *Server) GetRepoBranchesBranchCommits(ctx context.Context, request openapi.GetRepoBranchesBranchCommitsRequestObject) (openapi.GetRepoBranchesBranchCommitsResponseObject, error) {
+	commits, err := gitutil.BranchCommits(ctx, s.repoPath, request.Branch)
+	if err != nil {
+		return nil, err
+	}
+
+	previews := make([]openapi.CommitPreview, len(commits))
+	for i, commit := range commits {
+		previews[i] = openapi.CommitPreview{
+			Message: commit.Message,
+			Sha1:    string(commit.SHA1),
+		}
+	}
+
+	return openapi.GetRepoBranchesBranchCommits200JSONResponse(previews), nil
+}
+
+func (s *Server) GetRepoFile(ctx context.Context, request openapi.GetRepoFileRequestObject) (openapi.GetRepoFileResponseObject, error) {
 	revision := "HEAD"
 	if request.Params.Revision != nil {
 		revision = *request.Params.Revision
@@ -100,7 +133,7 @@ func (s *Server) GetFile(ctx context.Context, request openapi.GetFileRequestObje
 	}
 
 	if start > end {
-		return openapi.GetFile400JSONResponse{
+		return openapi.GetRepoFile400JSONResponse{
 			ErrorJSONResponse: openapi.ErrorJSONResponse{
 				Message: "start is greater than end",
 			},
@@ -124,12 +157,12 @@ func (s *Server) GetFile(ctx context.Context, request openapi.GetFileRequestObje
 			end = len(lines)
 		}
 
-		return openapi.GetFile200JSONResponse(lines[start:end]), nil
+		return openapi.GetRepoFile200JSONResponse(lines[start:end]), nil
 	}
 
-	contents, err := gitutil.ReadFile(ctx, revision, request.Params.Path)
+	contents, err := gitutil.ReadFile(ctx, s.repoPath, revision, request.Params.Path)
 	if err != nil {
-		return openapi.GetFile400JSONResponse{
+		return openapi.GetRepoFile400JSONResponse{
 			ErrorJSONResponse: openapi.ErrorJSONResponse{
 				Message: err.Error(),
 			},
@@ -142,13 +175,13 @@ func (s *Server) GetFile(ctx context.Context, request openapi.GetFileRequestObje
 		ttlcache.DefaultTTL,
 	)
 
-	return s.GetFile(ctx, request)
+	return s.GetRepoFile(ctx, request)
 }
 
-func (s *Server) GetDiffMap(ctx context.Context, request openapi.GetDiffMapRequestObject) (openapi.GetDiffMapResponseObject, error) {
+func (s *Server) GetRepoDiffMap(ctx context.Context, request openapi.GetRepoDiffMapRequestObject) (openapi.GetRepoDiffMapResponseObject, error) {
 	diffs, err := s.getDiffs(ctx, request.Params.A, request.Params.B)
 	if err != nil {
-		return openapi.GetDiffMap400JSONResponse{
+		return openapi.GetRepoDiffMap400JSONResponse{
 			ErrorJSONResponse: openapi.ErrorJSONResponse{
 				Message: err.Error(),
 			},
@@ -162,16 +195,16 @@ func (s *Server) GetDiffMap(ctx context.Context, request openapi.GetDiffMapReque
 		lastLine = d.FileDiff.Lines.End
 	}
 
-	return openapi.GetDiffMap200JSONResponse{
+	return openapi.GetRepoDiffMap200JSONResponse{
 		Files:      files,
 		LinesTotal: lastLine,
 	}, nil
 }
 
-func (s *Server) GetDiffPart(ctx context.Context, request openapi.GetDiffPartRequestObject) (openapi.GetDiffPartResponseObject, error) {
+func (s *Server) GetRepoDiffPart(ctx context.Context, request openapi.GetRepoDiffPartRequestObject) (openapi.GetRepoDiffPartResponseObject, error) {
 	diffs, err := s.getDiffs(ctx, request.Params.A, request.Params.B)
 	if err != nil {
-		return openapi.GetDiffPart400JSONResponse{
+		return openapi.GetRepoDiffPart400JSONResponse{
 			ErrorJSONResponse: openapi.ErrorJSONResponse{
 				Message: err.Error(),
 			},
@@ -181,7 +214,7 @@ func (s *Server) GetDiffPart(ctx context.Context, request openapi.GetDiffPartReq
 	start, end := request.Params.Start-1, request.Params.End-1
 
 	if start > end {
-		return openapi.GetDiffPart400JSONResponse{
+		return openapi.GetRepoDiffPart400JSONResponse{
 			ErrorJSONResponse: openapi.ErrorJSONResponse{
 				Message: "start is greater than end",
 			},
@@ -194,7 +227,7 @@ func (s *Server) GetDiffPart(ctx context.Context, request openapi.GetDiffPartReq
 	}
 
 	if start < 0 || start >= len(lines) {
-		return openapi.GetDiffPart400JSONResponse{
+		return openapi.GetRepoDiffPart400JSONResponse{
 			ErrorJSONResponse: openapi.ErrorJSONResponse{
 				Message: "start is out of bounds",
 			},
@@ -202,7 +235,7 @@ func (s *Server) GetDiffPart(ctx context.Context, request openapi.GetDiffPartReq
 	}
 
 	if end < 0 || end >= len(lines) {
-		return openapi.GetDiffPart400JSONResponse{
+		return openapi.GetRepoDiffPart400JSONResponse{
 			ErrorJSONResponse: openapi.ErrorJSONResponse{
 				Message: "end is out of bounds",
 			},
@@ -233,5 +266,5 @@ func (s *Server) GetDiffPart(ctx context.Context, request openapi.GetDiffPartReq
 		}
 	})
 
-	return openapi.GetDiffPart200JSONResponse(linesDiff), nil
+	return openapi.GetRepoDiffPart200JSONResponse(linesDiff), nil
 }
