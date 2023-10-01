@@ -6,7 +6,7 @@ import (
 
 type Diff struct {
 	Status   Status
-	Lines    []Line
+	Lines    []*Line
 	Src      State
 	Dst      State
 	IsBinary bool

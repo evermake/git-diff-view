@@ -221,7 +221,7 @@ func (s *Server) GetRepoDiffPart(ctx context.Context, request openapi.GetRepoDif
 		}, nil
 	}
 
-	var lines []diff.Line
+	var lines []*diff.Line
 	for _, d := range diffs {
 		lines = append(lines, d.Diff.Lines...)
 	}
@@ -242,7 +242,7 @@ func (s *Server) GetRepoDiffPart(ctx context.Context, request openapi.GetRepoDif
 		}, nil
 	}
 
-	linesDiff := lo.Map(lines[start:end+1], func(line diff.Line, _ int) openapi.LineDiff {
+	linesDiff := lo.Map(lines[start:end+1], func(line *diff.Line, _ int) openapi.LineDiff {
 		var operation openapi.LineDiffOperation
 		switch line.Operation {
 		case diff.LineOperationModify:

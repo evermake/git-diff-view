@@ -10,6 +10,7 @@ import (
 
 	"github.com/bluekeyes/go-gitdiff/gitdiff"
 	"github.com/evermake/git-diff-view/pkg/gitutil"
+	"github.com/samber/lo"
 )
 
 func Calculate(
@@ -81,7 +82,7 @@ func Calculate(
 			name = file.NewName
 		}
 
-		var lines []Line
+		var lines []*Line
 		for _, fragment := range file.TextFragments {
 			var (
 				srcLineNumber = fragment.OldPosition
@@ -89,7 +90,7 @@ func Calculate(
 			)
 
 			for _, fragmentLine := range fragment.Lines {
-				line := Line{}
+				line := new(Line)
 
 				switch fragmentLine.Op {
 				case gitdiff.OpAdd:
@@ -123,42 +124,45 @@ func Calculate(
 		}
 
 		var (
-			deletedLinesIndices []int
-			addedLinesIndices   []int
+			deletedLines []*Line
+			addedLines   []*Line
 		)
 
 		assignModifyOperations := func() {
-			window := min(len(deletedLinesIndices), len(addedLinesIndices))
+			window := min(len(deletedLines), len(addedLines))
 
 			// update operation to modify for deleted lines
 			// also set new contents to dst
 			for cursor := 0; cursor < window; cursor++ {
-				deletedLineIndex := deletedLinesIndices[cursor]
-				addedLineIndex := addedLinesIndices[cursor]
+				deletedLine := deletedLines[cursor]
+				addedLine := addedLines[cursor]
 
-				lines[deletedLineIndex].Operation = LineOperationModify
-				lines[deletedLineIndex].Dst = lines[addedLineIndex].Dst
+				deletedLine.Operation = LineOperationModify
+				deletedLine.Dst = addedLine.Dst
 			}
 
 			// remove lines with add operation that participated in modify
-			if window > 0 && len(addedLinesIndices) != 0 {
-				index := addedLinesIndices[0]
+			if window > 0 && len(addedLines) != 0 {
+				_, index, _ := lo.FindIndexOf(lines, func(line *Line) bool {
+					return line == addedLines[0]
+				})
+
 				lines = append(lines[:index], lines[index+window:]...)
 			}
 		}
 
-		for i, line := range lines {
+		for _, line := range lines {
 			switch line.Operation {
 			case LineOperationAdd:
-				addedLinesIndices = append(addedLinesIndices, i)
+				addedLines = append(addedLines, line)
 			case LineOperationDelete:
-				deletedLinesIndices = append(deletedLinesIndices, i)
+				deletedLines = append(deletedLines, line)
 			default:
 				assignModifyOperations()
 
 				// reset
-				addedLinesIndices = nil
-				deletedLinesIndices = nil
+				addedLines = nil
+				deletedLines = nil
 			}
 		}
 		assignModifyOperations()
