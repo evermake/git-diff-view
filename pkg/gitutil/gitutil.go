@@ -8,6 +8,9 @@ import (
 )
 
 func IsBinary(ctx context.Context, repo string, revision string, path string) (bool, error) {
+	// TODO
+	return false, nil
+
 	cmd := exec.CommandContext(
 		ctx,
 		"git",

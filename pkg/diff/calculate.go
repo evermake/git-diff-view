@@ -147,7 +147,11 @@ func Calculate(
 					return line == addedLines[0]
 				})
 
-				lines = append(lines[:index], lines[index+window:]...)
+				if index+window >= len(lines) {
+					lines = lines[:index]
+				} else {
+					lines = append(lines[:index], lines[index+window:]...)
+				}
 			}
 		}
 

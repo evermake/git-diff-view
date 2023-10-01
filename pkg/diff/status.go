@@ -1,10 +1,8 @@
 package diff
 
 import (
-	"bytes"
-	"encoding/binary"
+	"strconv"
 	"unicode"
-	"unicode/utf8"
 )
 
 type Status struct {
@@ -41,22 +39,23 @@ func parseStatusType(letter rune) (StatusType, bool) {
 }
 
 func parseStatusScore(raw []byte) (int, error) {
-	buff := bytes.NewReader(raw)
-
-	var score int
-	if err := binary.Read(buff, binary.BigEndian, &score); err != nil {
+	n, err := strconv.ParseInt(string(raw), 10, 64)
+	if err != nil {
 		return 0, err
 	}
 
-	return score, nil
+	return int(n), nil
 }
 
 func parseStatus(raw []byte) (status Status, err error) {
-	fields := bytes.FieldsFunc(raw, func(r rune) bool {
-		return unicode.IsDigit(r)
-	})
+	var i int
+	for i = 0; i < len(raw); i++ {
+		if !unicode.IsLetter(rune(raw[i])) {
+			break
+		}
+	}
 
-	statusLetter, _ := utf8.DecodeRune(fields[0])
+	statusLetter := rune(raw[:i][0])
 
 	var ok bool
 	status.Type, ok = parseStatusType(statusLetter)
@@ -67,15 +66,15 @@ func parseStatus(raw []byte) (status Status, err error) {
 
 	switch status.Type {
 	case StatusCopy, StatusRename:
-		score, err := parseStatusScore(fields[1])
+		score, err := parseStatusScore(raw[i:])
 		if err != nil {
 			return Status{}, err
 		}
 
 		status.Score = &score
 	case StatusModify:
-		if len(fields) == 2 {
-			score, err := parseStatusScore(fields[1])
+		if i < len(raw) {
+			score, err := parseStatusScore(raw[i:])
 			if err != nil {
 				return Status{}, err
 			}

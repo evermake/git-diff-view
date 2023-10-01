@@ -20,7 +20,7 @@ func parseDiff(raw []byte) (diff Diff, err error) {
 
 	fields := bytes.Fields(raw)
 
-	if len(fields) < 5 || len(fields) > 6 {
+	if len(fields) < 6 || len(fields) > 7 {
 		err = ErrMalformedDiff
 		return
 	}
@@ -55,7 +55,7 @@ func parseDiff(raw []byte) (diff Diff, err error) {
 	diff.Src.Path = string(nextField())
 
 	if diff.Status.Type == StatusCopy || diff.Status.Type == StatusRename {
-		if len(fields) != 6 {
+		if len(fields) != 7 {
 			err = ErrMalformedDiff
 			return
 		}
