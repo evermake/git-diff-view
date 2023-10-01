@@ -7,6 +7,26 @@ import (
 	"os/exec"
 )
 
+func IsBinary(ctx context.Context, repo string, revision string, path string) (bool, error) {
+	cmd := exec.CommandContext(
+		ctx,
+		"git",
+		"diff-tree",
+		"-p",
+		revision,
+		path,
+	)
+	cmd.Dir = repo
+
+	stdout, err := cmd.Output()
+	if err != nil {
+		return false, err
+	}
+
+	// idk about that
+	return bytes.Contains(stdout, []byte("Binary files")), nil
+}
+
 func Branches(ctx context.Context, repo string) ([]Branch, error) {
 	cmd := exec.CommandContext(
 		ctx,

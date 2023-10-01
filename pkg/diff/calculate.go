@@ -169,7 +169,18 @@ func Calculate(
 
 		diff := diffs[name]
 		diff.Lines = lines
-		diff.IsBinary = file.IsBinary
+
+		if diff.Status.Type == StatusAdd {
+			diff.IsBinary, err = gitutil.IsBinary(ctx, repoPath, commitB, diff.Dst.Path)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			diff.IsBinary, err = gitutil.IsBinary(ctx, repoPath, commitA, diff.Src.Path)
+			if err != nil {
+				return nil, err
+			}
+		}
 
 		diffs[name] = diff
 	}
