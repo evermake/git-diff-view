@@ -127,6 +127,26 @@ func Calculate(
 			addedLinesIndices   []int
 		)
 
+		assignModifyOperations := func() {
+			window := min(len(deletedLinesIndices), len(addedLinesIndices))
+
+			// update operation to modify for deleted lines
+			// also set new contents to dst
+			for cursor := 0; cursor < window; cursor++ {
+				deletedLineIndex := deletedLinesIndices[cursor]
+				addedLineIndex := addedLinesIndices[cursor]
+
+				lines[deletedLineIndex].Operation = LineOperationModify
+				lines[deletedLineIndex].Dst = lines[addedLineIndex].Dst
+			}
+
+			// remove lines with add operation that participated in modify
+			if window > 0 && len(addedLinesIndices) != 0 {
+				index := addedLinesIndices[0]
+				lines = append(lines[:index], lines[index+window:]...)
+			}
+		}
+
 		for i, line := range lines {
 			switch line.Operation {
 			case LineOperationAdd:
@@ -134,29 +154,14 @@ func Calculate(
 			case LineOperationDelete:
 				deletedLinesIndices = append(deletedLinesIndices, i)
 			default:
-				window := min(len(deletedLinesIndices), len(addedLinesIndices))
-
-				// update operation to modify for deleted lines
-				// also set new contents to dst
-				for cursor := 0; cursor < window; cursor++ {
-					deletedLineIndex := deletedLinesIndices[cursor]
-					addedLineIndex := addedLinesIndices[cursor]
-
-					lines[deletedLineIndex].Operation = LineOperationModify
-					lines[deletedLineIndex].Dst = lines[addedLineIndex].Dst
-				}
-
-				// remove lines with add operation that participated in modify
-				if window > 0 && len(addedLinesIndices) != 0 {
-					index := addedLinesIndices[0]
-					lines = append(lines[:index], lines[index+window:]...)
-				}
+				assignModifyOperations()
 
 				// reset
 				addedLinesIndices = nil
 				deletedLinesIndices = nil
 			}
 		}
+		assignModifyOperations()
 
 		diff := diffs[name]
 		diff.Lines = lines
