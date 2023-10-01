@@ -8,15 +8,13 @@ import (
 )
 
 func IsBinary(ctx context.Context, repo string, revision string, path string) (bool, error) {
-	// TODO
-	return false, nil
-
 	cmd := exec.CommandContext(
 		ctx,
 		"git",
 		"diff-tree",
 		"-p",
 		revision,
+		"--",
 		path,
 	)
 	cmd.Dir = repo
@@ -26,8 +24,7 @@ func IsBinary(ctx context.Context, repo string, revision string, path string) (b
 		return false, err
 	}
 
-	// idk about that
-	return bytes.Contains(stdout, []byte("Binary files")), nil
+	return bytes.Contains(stdout, []byte("Binary files")) && !bytes.Contains(stdout, []byte("@@")), nil
 }
 
 func Branches(ctx context.Context, repo string) ([]Branch, error) {
