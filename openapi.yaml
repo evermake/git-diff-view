@@ -1,0 +1,274 @@
+openapi: 3.0.0
+info:
+  title: Diff API
+  version: 1.0.0
+paths:
+  /repo/branches:
+    get:
+      summary: Get repo branches
+      responses:
+        '200':
+          description: Branches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BranchPreview'
+        '400':
+          $ref: '#/components/responses/Error'
+  /repo/branches/{branch}/commits:
+    get:
+      summary: Get branch commits
+      parameters:
+        - in: path
+          name: branch
+          schema:
+            type: string
+          required: true
+          description: Branch name
+      responses:
+        '200':
+          description: Branch commits
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CommitPreview'
+  /repo/file:
+    get:
+      summary: Get file contents
+      parameters:
+        - name: revision
+          in: query
+          description: Revision of the file
+          schema:
+            type: string
+            default: HEAD
+        - name: path
+          in: query
+          description: Path to the file
+          required: true
+          schema:
+            type: string
+        - name: start
+          in: query
+          description: >
+            Start line number.
+            Defaults to 0 if omitted.
+            Using a value that is out of bounds will be rounded to the closest bound.
+          schema:
+            type: integer
+            default: 0
+        - name: end
+          in: query
+          description: >
+            End line number.
+            Defaults to the last line of the file if omitted.
+            Using a value that is out of bounds will be rounded to the closest bound.
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Lines of the file
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        '400':
+          $ref: '#/components/responses/Error'
+  /repo/diff/map:
+    get:
+      summary: Calculate the difference between 'a' and 'b' for mapping.
+      parameters:
+        - name: a
+          in: query
+          description: First commit
+          required: true
+          schema:
+            type: string
+        - name: b
+          in: query
+          description: Second commit
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content: 
+            application/json:
+              schema:
+                type: object
+                required:
+                  - linesTotal
+                  - files
+                properties:
+                  linesTotal:
+                    type: integer
+                  files:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FileDiff'
+        '400':
+          $ref: '#/components/responses/Error'
+  /repo/diff/part:
+    get:
+      summary: "Get information about partial diff between a and b for given startline and endline"
+      parameters:
+        - name: a
+          in: query
+          description: First commit
+          required: true
+          schema:
+            type: string
+        - name: b
+          in: query
+          description: Second commit
+          required: true
+          schema:
+            type: string
+        - name: start
+          in: query
+          description: Start line of the diff
+          required: true
+          schema:
+            type: integer
+        - name: end
+          in: query
+          required: true
+          description: End line for the diff
+          schema:
+            type: integer
+      responses:
+          '200':
+            description: Successful response
+            content: 
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/LineDiff'
+          '400':
+            $ref: '#/components/responses/Error'
+components:
+  schemas:
+    Range:
+      type: object
+      required:
+        - start
+        - end
+      properties:
+        start:
+          type: integer
+        end:
+          type: integer
+    LineState:
+      type: object
+      required:
+        - number
+        - content
+      properties:
+        number:
+          type: integer
+          format: int64
+        content:
+          type: string
+    LineDiff:
+      type: object
+      required:
+        - operation
+        - src
+        - dst
+      properties:
+        src:
+          $ref: '#/components/schemas/LineState'
+        dst:
+          $ref: '#/components/schemas/LineState'
+        operation:
+          type: string
+          enum:
+            - M
+            - A
+            - D
+    FileDiff:
+      type: object
+      required:
+        - status
+        - src
+        - dst
+        - lines
+        - isBinary
+      properties:
+        status:
+          $ref: '#/components/schemas/Status'
+        src:
+          $ref: '#/components/schemas/State'
+        dst:
+          $ref: '#/components/schemas/State'
+        isBinary:
+          type: boolean
+        lines:
+          $ref: '#/components/schemas/Range'
+    BranchPreview:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+    CommitPreview:
+      type: object
+      required:
+        - sha1
+        - message
+      properties:
+        sha1:
+          type: string
+          format: sha1
+        message:
+          type: string
+    Status:
+      type: object
+      required:
+        - type
+      properties:
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        type:
+          type: string
+          enum:
+            - A
+            - C
+            - D
+            - M
+            - R
+            - T
+            - U
+            - X
+    State:
+      type: object
+      required:
+        - path
+      properties:
+        path:
+          type: string
+    Error:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+  responses:
+    Error:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

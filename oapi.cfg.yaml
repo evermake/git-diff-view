@@ -1,0 +1,7 @@
+package: openapi
+generate:
+  echo-server: true
+  strict-server: true
+  embedded-spec: true
+  models: true
+output: internal/controller/http/v1/openapi/openapi.go
