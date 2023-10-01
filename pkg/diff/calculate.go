@@ -143,9 +143,13 @@ func Calculate(
 
 			// remove lines with add operation that participated in modify
 			if window > 0 && len(addedLines) != 0 {
-				_, index, _ := lo.FindIndexOf(lines, func(line *Line) bool {
+				_, index, ok := lo.FindIndexOf(lines, func(line *Line) bool {
 					return line == addedLines[0]
 				})
+
+				if !ok {
+					return
+				}
 
 				if index+window >= len(lines) {
 					lines = lines[:index]
