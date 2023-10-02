@@ -31,3 +31,13 @@ Usage of git-diff-server:
   -repo string
     	path to the git repository (default is the current directory)
 ```
+
+## Contributors
+
+Ordered by impact of their contribution:
+
+1. Vadim Z. ([metafates](https://github.com/metafates))
+2. Albert A. ([TatarinAlba](https://github.com/TatarinAlba))
+3. Vladislav D. ([evermake](https://github.com/evermake))
+4. Andrey S. ([5ur3](https://github.com/5ur3))
+5. Andrey P. ([majorro](https://github.com/majorro))
